@@ -909,7 +909,7 @@ class Source(Block):
 
         cmd = (f"S {ob.name} {ex} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
                f"{Bs.z:g} {Be.z:g} {ob.s_function.replace(' ', '_')} "
-               f"{ob.s_hard} {ob.s_resistance:g} {axis} {scale:g} "
+               f"{ob.s_hard:d} {ob.s_resistance:g} {axis} {scale:g} "
                f"{tu(ob,'s_tstart'):g} {tu(ob,'s_trise'):g} "
                f"{tu(ob,'s_duration'):g} {tu(ob,'s_tfall'):g}")
         if ob.verbose > 1:
