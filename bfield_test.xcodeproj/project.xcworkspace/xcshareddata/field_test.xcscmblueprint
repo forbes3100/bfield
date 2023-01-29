@@ -1,0 +1,25 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "7f41c127-7ae4-0310-9bc1-f515c248f397++2738",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+    "7f41c127-7ae4-0310-9bc1-f515c248f397++2738" : {
+
+    }
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "7f41c127-7ae4-0310-9bc1-f515c248f397++2738" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "DC02C703-1E7B-4588-9136-8011F06E80ED",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "7f41c127-7ae4-0310-9bc1-f515c248f397++2738" : "field\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "field_test",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "field_test.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "svn:\/\/foaly",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Subversion",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "7f41c127-7ae4-0310-9bc1-f515c248f397++2738"
+    }
+  ]
+}

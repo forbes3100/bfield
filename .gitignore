@@ -1,0 +1,15 @@
+.DS_Store
+Old
+__pycache__
+build
+DerivedData
+xcdebugger
+*.blend[12]
+cache_dp*
+blendcache_*
+xcuserdata
+.~lock*
+logs
+*.log
+output
+lc_output

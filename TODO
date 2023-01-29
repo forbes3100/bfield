@@ -1,0 +1,28 @@
+# BField TODO
+
+190613: Update field_server_eqns.odt sections 6 and 7 (Update Coefficients,
+         Step), in the same manner as section 5 (InitPMLarea).
+
+190614: Fix (or at least warn) case where Fields object size or location is
+         off-grid, which causes Probe.Vol int-size errors, impedance errors.
+
+190615: Have resistor blocks automatically calculate their conductivity given
+         a resistance. Maybe automate cap blocks too.
+
+230126: Fix Blender ignoring letter commands such as "X" while running sim.
+
+230126: Fix "CustomData_blend_write error: layer '':15 - can't be written to
+         file" upon file save.
+
+230127: Add scene-to-python export and import, for scene source control.
+
+230127: Have Cmd-K delete all Arrow objects? Or ask to delete upon save.
+
+230127: Make sure when starting a sim that no others are still running. When
+         so, have to type an ESC to kill each one.
+
+230127: Change status message when stopping and cleaning too.
+
+230129: Get bfieldshowmodal.py working on Linux: missing PIL module.
+
+230129: Set up Meep output comparison on Linux.
