@@ -248,16 +248,14 @@ class Block:
                         "Name of snapped-to-sim-grid copy of this object"),
     }
 
+    # cls.__annotations__ isn't used here because it's empty for subclasses
+
     @classmethod
     def createTypes(cls):
         ##print(f"Block.createTypes for {cls.__name__}: "
         ##      f"adding {', '.join(cls.props.keys())}")
         for key, value in cls.props.items():
-            ##print(f"Block.createTypes: prop {key}={value}")
             setattr(bpy.types.Object, key, value)
-        #for prop in cls.__annotations__:
-        #    print(f"createTypes: prop={prop}")
-        #    setattr(bpy.types.Object, prop[1]['name'], prop)
 
     @classmethod
     def delTypes(cls):
@@ -280,7 +278,8 @@ class Block:
         scn = bpy.context.scene
         view_layer = bpy.context.view_layer
         dx = sim.dx
-        op = bpy.ops.object
+
+        # object may optionally be snapped to grid
         sob = ob
         snapc = collSnap.get()
         if ob.verbose > 0:
@@ -1292,7 +1291,7 @@ class Probe(Block):
 
             if mat:
                 talpha = ob.p_imageAlpha
-                print(f"{ob.name}: setting image alpha to {talpha}")
+                ##print(f"{ob.name}: setting image alpha to {talpha}")
                 mat.node_tree.nodes["Principled BSDF"
                                     ].inputs['Alpha'].default_value = talpha
                 mat.blend_method = 'BLEND'
@@ -2209,7 +2208,7 @@ class Sim:
     def frameHandler(self, scene, depsgraph):
         self.area3d.tag_redraw()   # update status line
 
-    def onScreenRemove(self):
+    def onScreenRemove(self, dummy1, dummy2):
         ##print("onScreenRemove", self)
         bpy.types.SpaceView3D.draw_handler_remove(self.handle, 'WINDOW')
         bpy.app.driver_namespace.pop('fields_handle')
@@ -2496,7 +2495,7 @@ class FieldObjectPanel(bpy.types.Panel):
                     field = mat.name[-1]
                     units = Probe.fieldUnits[('E', 'M')[field == 'H']]
                     Mr = ob.rotation_euler.to_matrix()
-                    V = Mr * Vector((1,0,0))
+                    V = Mr @ Vector((1,0,0))
                     ap = ob.parent
                     r = ob.scale.x / ap.p_sfactor
                     if ap.p_log:
@@ -2542,9 +2541,9 @@ class FieldMatPanel(bpy.types.Panel):
     def createTypes(cls):
         # for prop in cls.props:
         #     setattr(bpy.types.Material, prop[1]['name'], prop)
-        ##print(f"Block.createTypes: .__annotations__={cls.__annotations__}")
+        ##print(f"FMP.createTypes: .__annotations__={cls.__annotations__}")
         for key, value in cls.__annotations__.items():
-            ##print(f"Block.createTypes: {key}={value}")
+            ##print(f"FMP.createTypes: {key}={value}")
             setattr(bpy.types.Material, key, value)
 
     @classmethod
