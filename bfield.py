@@ -2190,7 +2190,7 @@ class Sim:
         blf.position(font_id, w-400, 10, 0)
         blf.color(font_id, 255, 255, 255, 255)
         blf.size(font_id, 24)
-        status = f"{scn.frame_current * self.dt * 1e12:9.3} ps"
+        status = f"{scn.frame_current * self.dt * 1e12:9.3f} ps"
         if self and self.state > 3:
             status += '  PAUSED'
         blf.draw(font_id, status)
