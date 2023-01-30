@@ -16,13 +16,12 @@
 
 230127: Add scene-to-python export and import, for scene source control.
 
-230127: Have Cmd-K delete all Arrow objects? Or ask to delete upon save.
-
-230127: Make sure when starting a sim that no others are still running. When
-         so, have to type an ESC to kill each one.
-
-230127: Change status message when stopping and cleaning too.
-
-230129: Get bfieldshowmodal.py working on Linux: missing PIL module.
+230129: Get bfield.py working on Linux: missing PIL module.
 
 230129: Set up Meep output comparison on Linux.
+
+230130: Fix dynProbe stealing G,X,Y,Z keys from Blender.
+
+230130: Use a common mesh for volume probe arrows.
+
+230130: is getMaterialsAndDims transparency working?

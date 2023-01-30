@@ -278,6 +278,7 @@ class Block:
         scn = bpy.context.scene
         view_layer = bpy.context.view_layer
         dx = sim.dx
+        op = bpy.ops.object
 
         # object may optionally be snapped to grid
         sob = ob
@@ -1252,7 +1253,8 @@ class Probe(Block):
                     tex = mat.node_tree.nodes.get('Image Texture')
                     if tex:
                         img = tex.image
-                        if (img.generated_width != rep*nix or
+                        if (img is None or
+                            img.generated_width != rep*nix or
                             img.generated_height != rep*niy):
                             if ob.p_verbose > 1:
                                 print(f"removing old wrong-sized "
@@ -1270,7 +1272,8 @@ class Probe(Block):
                 mat.use_nodes = True
                 mat.specular_intensity = 0.
                 mesh.materials.append(mat)
-                img = bpy.data.images.new(name, width=rep*nix, height=rep*niy)
+                imgName = f"probe_{name}"
+                img = bpy.data.images.new(imgName, width=rep*nix, height=rep*niy)
 
                 tex = mat.node_tree.nodes.new(type='ShaderNodeTexImage')
                 tex.image = img
@@ -1367,11 +1370,17 @@ class Probe(Block):
                 for arrow in ob.children:
                     objs.remove(arrow, do_unlink=True)
 
+                # get or create the Tmp collection, used to delete all arrows
+                tmpc = bpy.data.collections.get('Tmp')
+                if not tmpc:
+                    bpy.ops.object.collection_instance_add(name='Tmp')
+                    tmpc = bpy.data.collections.get('Tmp')
+
                 r = dx * 0.05
                 h = dx * 0.5
                 verts = ((0,r,r), (0,r,-r), (0,-r,-r), (0,-r,r), (h,0,0))
                 faces = ((1,0,4), (4,2,1), (4,3,2), (4,0,3), (0,1,2,3))
-                # TODO: use common mesh, after Outliner fixed in 2.80
+                # TODO: use common mesh, since Outliner now fixed
                 ##mesh = bpy.data.meshes.new(name='Arrow')
                 ##mesh.from_pydata(verts, [], faces)
                 ##mesh.update()
@@ -1392,6 +1401,7 @@ class Probe(Block):
                             ##scn.objects.link(arrow)
                             arrow.parent = ob
                             collection.objects.link(arrow)
+                            tmpc.objects.link(arrow)
             self.arrows = list(ob.children)
             self.arrows.sort(key=lambda arrow: arrow.name)
             if ob.p_verbose > 1:
@@ -2163,7 +2173,8 @@ class Sim:
     # On-screen status display.
 
     def onScreenInit(self, context):
-        if context.area.type == 'VIEW_3D':
+        area = context.area
+        if area and area.type == 'VIEW_3D':
             oldh = bpy.app.driver_namespace.get('fields_handle')
             if oldh:
                 bpy.types.SpaceView3D.draw_handler_remove(oldh, 'WINDOW')
@@ -2223,14 +2234,18 @@ class FieldOperator(bpy.types.Operator):
     bl_label = "Run FDTD"
 
     timer = None
+    sim = None
 
     #--------------------------------------------------------------------------
     # Timer routines for modal operator.
 
     def startTimer(self):
+        sim = self.sim
+        if not sim:
+            return
         context = self.context
         context.window_manager.modal_handler_add(self)
-        rate = (self.sim.fieldsOb.get('msRate') or 200)
+        rate = (sim.fieldsOb.get('msRate') or 200)
         rate = max(min(rate, 1000), 10)
         print(f"starting {rate} ms/tick timer")
         self.timer = context.window_manager.event_timer_add(
@@ -2293,7 +2308,7 @@ class FieldOperator(bpy.types.Operator):
         ##    print("event:", event.value, event.type, "oskey=", event.oskey)
 
         if sim.verbose > 1 and event.type == 'P':
-            print("'P', oskey=", event.oskey, "value=", event.value)
+            print(f"'P', oskey={event.oskey} value={event.value}")
         if event.value == 'PRESS':
             if not inWin:
                 return {'PASS_THROUGH'}
@@ -2303,6 +2318,7 @@ class FieldOperator(bpy.types.Operator):
                     return self.dynProbe(event, 'DONE')
 
             if sim.state >= 3:
+                # TODO: fix dynProbe stealing G,X,Y,Z keys from Blender
                 if event.type == 'G':
                     self.lockAxis = None
                     return self.dynProbe(event, 'START')
@@ -2312,7 +2328,7 @@ class FieldOperator(bpy.types.Operator):
                     return {'RUNNING_MODAL'}
             
                 elif event.type == 'ESC':
-                    ##print("ESC pressed")
+                    ##print("ESC pressed while in sim")
                     return self.cancel(context)
 
             elif event.type == 'ESC':
@@ -2356,13 +2372,20 @@ class FieldOperator(bpy.types.Operator):
         return {'PASS_THROUGH'}
 
     def invoke(self, context, event):
+        global sims
+        sim = sims.get(context.scene)
         print("\n=== Starting BField FDTD simulation ===")
         self.context = context
         winrgn = context.area.regions[-1]
         self.winStart = S = Vector((winrgn.x, winrgn.y))
         self.winEnd = E = self.winStart + Vector((winrgn.width, winrgn.height))
         ##print("win @", fv(S), fv(E))
-        self.sim = sim = Sim(context)
+        if sim:
+            if sim.state > 0:
+                print("Stopping current sim")
+                sim.operator.cancel(context)
+        self.sim = Sim(context)
+        self.sim.operator = self
         self.probeDrag = None
         self.startTimer()
         return {'RUNNING_MODAL'}
@@ -2382,11 +2405,31 @@ class FieldOperator(bpy.types.Operator):
             self.stopTimer()
         sim.state = 0
         scn.frame_end = scn.frame_current
+
+        # refresh viewport to remove any "PAUSED" on status line
+        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+
         print("FDTD stopped.")
         return {'CANCELLED'}
 
 
 #==============================================================================
+
+def cleanTmps():
+    """Remove all probe-generated objects and images"""
+
+    tmpc = bpy.data.collections.get('Tmp')
+    if tmpc:
+        objs = bpy.data.objects
+        for ob in tmpc.all_objects.values():
+            objs.remove(ob, do_unlink=True)
+
+    imgs = bpy.data.images
+    for name,img in imgs.items():
+        if name.startswith('probe_'):
+            imgs.remove(img, do_unlink=True)
+
+    bpy.app.handlers.frame_change_post.clear()
 
 class FieldCleanOperator(bpy.types.Operator):
     """Clean up after FDTD simulation (Cmd-K)"""
@@ -2395,11 +2438,7 @@ class FieldCleanOperator(bpy.types.Operator):
 
     def invoke(self, context, event):
         print("Clean-FDTD invoke")
-        ##op = bpy.ops.object
-        ##op.select_by_layer(layers=layerE+1)
-        ##op.select_by_layer(extend=True, layers=layerH+1)
-        ##op.delete()
-        bpy.app.handlers.frame_change_post.clear()
+        cleanTmps()
         return {'FINISHED'}
 
 
@@ -2511,6 +2550,7 @@ class FieldObjectPanel(bpy.types.Panel):
         layout.operator("fdtd.run")
         layout.operator("fdtd.plot")
         layout.operator("fdtd.center")
+        layout.operator("fdtd.clean")
 
 def populateTypes(scene):
     bpy.app.handlers.depsgraph_update_pre.remove(populateTypes)
