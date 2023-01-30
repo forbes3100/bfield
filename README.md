@@ -85,8 +85,8 @@ This should place the packages in ~/.local/lib/python3.10/site-packages/
 
 - In XCode, click "play" button (run).
 - Type "bl" to launch Blender.
-- Open file bfield_test.blend.
-- Click the "Run Script" button in the bfieldshowmodal.py pane.
+- Open file platesm.blend.
+- Click the "Run Script" button in the bfield.py pane.
 
 This adds the following keys:
 
@@ -101,8 +101,7 @@ The usual procedure is to select a Blender scene (each containing one test setup
 
 ### To test the example
 
-- Select the "platesm" scene.
-- Select (left-click) on the "9ArrowsME2.psm" block. It's a wireframe cube, which may already be showing its 3D array of field arrows.
+- Select (left-click) on the "9ArrowsE.psm" block. It's a wireframe cube, which may already be showing its 3D array of field arrows.
 - Select Objects (orange cube icon) in the Properties pane.
 - Reveal the FDTD section, and click the "Run FDTD" button there (or just type a Cmd-R). The "All Output" pane back in XCode should have printed the startup sequence and "Running..." In Blender, at the bottom of the 3D View pane it should now show running status: a frame count incrementing about once a second, and a current time in ps. The evolving field state will be shown by field arrows. You may change viewpoint, etc. while it's running. Let it run for maybe 100 frames and then stop it by hitting ESC. The XCode output should show "Stopping" and "disconnect".
 - In Blender in the Timeline pane, hit the rewind button and then the play button. The 3D array of field arrows in the 3D Viewer should be showing the animated evolving EM field.
