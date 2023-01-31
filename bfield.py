@@ -107,7 +107,7 @@ collH = StandardCollection("H")
 
 
 sims = {}       # dictionary of FDTD simulations, indexed by scene
-
+fieldOperator = None
 
 def tu(ob, name):
     return getattr(ob, name) * timeUnits[getattr(ob, name + 'Units')]
@@ -500,10 +500,10 @@ class MeshMatBlock(MatBlock):
                 scn.frame_set(1)
                 print(f" {nz} slices at location=({x}, {y}, {Bs.z} -> {Be.z})")
                 so.location = (x, y, Bs.z)
-                bpy.ops.anim.keyframe_insert_menu(type='Location')
+                so.keyframe_insert(data_path="location", frame=1)
                 scn.frame_set(nz)
                 so.location = (x, y, Be.z)
-                bpy.ops.anim.keyframe_insert_menu(type='Location')
+                so.keyframe_insert(data_path="location", frame=nz)
                 zc = so.animation_data.action.fcurves[2]
                 for kp in zc.keyframe_points:
                     kp.handle_left_type = 'VECTOR'
@@ -549,6 +549,7 @@ class MeshMatBlock(MatBlock):
                     print("waiting for", lastfn)
                 yield
             ##so.hide_viewport = True
+            bpy.data.objects.remove(so, do_unlink=True)
 
         # tell server to load image files
         bpy.context.view_layer.objects.active = ob
@@ -557,7 +558,6 @@ class MeshMatBlock(MatBlock):
                  f"{Bs.z:g} {Be.z:g} {nx} {nz}\n")
         if ob.verbose > 0:
             print("MeshMatBlock.sendDef_G", ob.name, "done.")
-        #scn.layers[layerSnap] = snapLayerSave
         snapc.hide_viewport = snapHideSave
 
 
@@ -2372,7 +2372,8 @@ class FieldOperator(bpy.types.Operator):
         return {'PASS_THROUGH'}
 
     def invoke(self, context, event):
-        global sims
+        global sims, fieldOperator
+        fieldOperator = self
         sim = sims.get(context.scene)
         print("\n=== Starting BField FDTD simulation ===")
         self.context = context
@@ -2424,10 +2425,10 @@ def cleanTmps():
         for ob in tmpc.all_objects.values():
             objs.remove(ob, do_unlink=True)
 
-    imgs = bpy.data.images
-    for name,img in imgs.items():
-        if name.startswith('probe_'):
-            imgs.remove(img, do_unlink=True)
+    #imgs = bpy.data.images
+    #for name,img in imgs.items():
+    #    if name.startswith('probe_'):
+    #        imgs.remove(img, do_unlink=True)
 
     bpy.app.handlers.frame_change_post.clear()
 
