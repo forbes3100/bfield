@@ -1,1 +1,1 @@
-(cd /Applications/Blender.app/Contents/Macos; ./Blender)
+(cd /Applications/Blender.app/Contents/Macos; ./Blender $@)
