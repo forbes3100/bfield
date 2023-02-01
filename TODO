@@ -9,8 +9,6 @@
 190615: Have resistor blocks automatically calculate their conductivity given
          a resistance. Maybe automate cap blocks too.
 
-230126: Fix Blender ignoring letter commands such as "X" while running sim.
-
 230126: Fix "CustomData_blend_write error: layer '':15 - can't be written to
          file" upon file save.
 
@@ -20,8 +18,10 @@
 
 230129: Set up Meep output comparison on Linux.
 
-230130: Fix dynProbe stealing G,X,Y,Z keys from Blender.
+230130: bfield.py: fix dynProbe stealing G,X,Y,Z keys from Blender.
 
-230130: Use a common mesh for volume probe arrows.
+230130: bfield.py: use a common mesh for volume probe arrows.
 
-230130: is getMaterialsAndDims transparency working?
+230130: bfield.py: is getMaterialsAndDims transparency working?
+
+230201: bfield.py: fix abspath("//") for import siunits.
