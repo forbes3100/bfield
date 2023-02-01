@@ -49,8 +49,9 @@ from subprocess import Popen, PIPE
 ##matplotlib.use('Tkagg')
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-cwd = bpy.path.abspath("//")
+cwd = bpy.path.abspath("//")  # TODO: fix abspath("//") for import siunits
 sys.path.append(cwd)
+print(f"{cwd=}")
 if 'siunits' in sys.modules:
     print("reloading module siunits")
     del sys.modules['siunits']
@@ -2392,8 +2393,8 @@ class FieldOperator(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
     def execute(self, context):
-        print("FDTD execute")
-        return {'FINISHED'}
+        ##print(f"FDTD execute: {context=}")
+        return self.invoke(context, None)
 
     def cancel(self, context):
         sim = self.sim
@@ -2463,6 +2464,10 @@ class FieldPauseOperator(bpy.types.Operator):
             sim.pause(context)
             sim.state = 3
         return {'FINISHED'}
+
+    def execute(self, context):
+        ##print("Pause-FDTD execute")
+        return self.invoke(context, None)
 
 
 class FieldPlotOperator(bpy.types.Operator):
