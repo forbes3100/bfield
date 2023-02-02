@@ -80,6 +80,7 @@ void doCommand(int fd, char* text) {
         throw new Err("command expected");
     char cmd = args[0][0];
     size_t _ = 0;
+    char* cwd = 0;
 
     switch (cmd) {
         case 'A': { // set parameter
@@ -98,8 +99,17 @@ void doCommand(int fd, char* text) {
             _ = write(fd, "A", 1);
             } break;
 
-        case 'C':   // simple mat block
+        case 'B':   // simple mat block
             new MatBlock(args, ai);
+            _ = write(fd, "A", 1);
+            break;
+
+        case 'C':   // change directory
+            if (ai != 2)
+                throw new Err("chdir path expected");
+            cwd = args[1];
+            chdir(cwd);
+            printf("chdir %s\n", cwd);
             _ = write(fd, "A", 1);
             break;
 
