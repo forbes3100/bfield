@@ -25,6 +25,7 @@
 
 /* Begin PBXFileReference section */
 		D2211A1629849EE600BB8565 /* siunits.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = siunits.py; sourceTree = "<group>"; };
+		D2211A17298B61BD00BB8565 /* TODO */ = {isa = PBXFileReference; lastKnownFileType = text; path = TODO; sourceTree = "<group>"; };
 		D25D4F5F20411220003DC903 /* bfield_server.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bfield_server.cpp; sourceTree = "<group>"; };
 		D26700682085197E000F3E9F /* bfield_test.blend */ = {isa = PBXFileReference; lastKnownFileType = file; path = bfield_test.blend; sourceTree = "<group>"; };
 		D279B37D209822360053ABB2 /* bfield_server.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bfield_server.h; sourceTree = "<group>"; };
@@ -55,6 +56,7 @@
 				D2211A1629849EE600BB8565 /* siunits.py */,
 				D26700682085197E000F3E9F /* bfield_test.blend */,
 				D2A17E08207133F300E35F7D /* bfield_server_eqns.odt */,
+				D2211A17298B61BD00BB8565 /* TODO */,
 				D2DCD1F62028FC1100BC1566 /* Products */,
 			);
 			sourceTree = "<group>";
