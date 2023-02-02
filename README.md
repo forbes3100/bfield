@@ -1,7 +1,7 @@
 # BField
 FDTD Electromagnetic Field Solver, with Blender front end
 
-![E field arrows around 2 resistors](screenshots/arrows-R1-R2.png)
+![E field arrows around 2 resistors](screenshots/arrows-ap5b-in-370ps.png)
 
 A fun exercise seeing if I can match the output of Cray's old LC field solver for 32-bit Linux, one of dozens of abandoned solvers (https://cecas.clemson.edu/cvel/modeling/EMAG/Old-codes.html). These have been superseded in part by MIT's open-source Meep (https://meep.readthedocs.io/en/latest/).
 
