@@ -93,7 +93,8 @@ class StandardCollection(object):
                 self._name = c.name
             else:
                 raise RuntimeError(
-                    f"Expected a single {self.baseName} collection in scene")
+                    f"Expected a single {self.baseName} collection in scene."
+                    f" Found {collNames}")
         ##print(f"StandardCollection {self.baseName}: {self._name}")
         return self._name
 
@@ -400,7 +401,7 @@ class MatBlock(Block):
         Bs, Be = self.Bs, self.Be
         mat = self.getFieldMat()
         mtype = self.mtypeCodes[ob['blockType']]
-        self.sim.send(f"C{mtype} {ob.name} {mat.name} {Bs.x:g} {Be.x:g} "
+        self.sim.send(f"B{mtype} {ob.name} {mat.name} {Bs.x:g} {Be.x:g} "
                       f"{Bs.y:g} {Be.y:g} {Bs.z:g} {Be.z:g}\n")
         yield
 
@@ -446,6 +447,7 @@ class MeshMatBlock(MatBlock):
         # only create directory of cached files if it doesn't exist
         dir = f"//cache_dp/{ob.name}_{nz:04}"
         dirp = bpy.path.abspath(dir)
+        ##print(f"{cwd=} cache_dp {dirp=}")
         if not os.path.isdir(dirp):
 
             # delete any previous canvas object and brush modifier
@@ -593,12 +595,14 @@ class LayerMatBlock(Block):
             print("LayerMatBlock.sendDef_G", ob.name, "start")
         mesh = ob.data
         mat = mesh.materials[0]
-        tex = mat.texture_slots[0].texture
+        tex = mat.node_tree.nodes.get('Image Texture')
+        if not tex:
+            raise ValueError(f"object {ob.name} missing Image Texture node")
         img = tex.image
         imgFilePath = bpy.path.abspath(img.filepath)
         Bs, Be = self.Bs, self.Be
         fmatName = ob.get('fmatName')
-        self.sim.send(f"LI{ob.name} {fmatName} {Bs.x:g} {Be.x:g} "
+        self.sim.send(f"LI {ob.name} {fmatName} {Bs.x:g} {Be.x:g} "
                       f"{Bs.y:g} {Be.y:g} {Bs.z:g} {Be.z:g} {imgFilePath}\n")
         yield
 
@@ -779,7 +783,7 @@ class SubSpaceBlock(MatBlock):
         Bs, Be = self.Bs, self.Be
         mat = self.getFieldMat()
         cmd = (f"G {ob.name} {mat.name} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
-               f"{Bs.z:g} {Be.z:g} {ob.parent.name}")
+               f"{Bs.z:g} {Be.z:g} {ob.parent.name}\n")
         if sim.verbose > 1:
             print(cmd)
         self.sim.send(cmd)
@@ -1374,8 +1378,11 @@ class Probe(Block):
                 # get or create the Tmp collection, used to delete all arrows
                 tmpc = bpy.data.collections.get('Tmp')
                 if not tmpc:
-                    bpy.ops.object.collection_instance_add(name='Tmp')
-                    tmpc = bpy.data.collections.get('Tmp')
+                    tmpc = bpy.data.collections.new('Tmp')
+                    if not tmpc:
+                        raise RuntimeError(
+                            f"failed to create Tmp collection for {ob.name}")
+                print(f"probe.vol {ob.name}: {tmpc=}")
 
                 r = dx * 0.05
                 h = dx * 0.5
@@ -1466,7 +1473,7 @@ class Probe(Block):
 
         cmd = (f"{'PU'[update]} {ob.name} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
                f"{Bs.z:g} {Be.z:g} {fieldName} {dispType[0]} "
-               f"{ob.p_dispScale:g} {ob.p_sfactor} {ob.p_verbose}")
+               f"{ob.p_dispScale:g} {ob.p_sfactor} {ob.p_verbose}\n")
         if ob.p_verbose > 1:
             print(cmd)
         self.sim.send(cmd)
@@ -2137,6 +2144,13 @@ class Sim:
             xcodeRun()
             time.sleep(5)
             self.startFDTD()
+
+        # tell simulator to chdir to blender file's directory
+        cmd = f"C {cwd}\n"
+        if self.verbose > 1:
+            print(cmd)
+        self.send(cmd)
+        yield
 
         for _ in self.createBlocks_G():
             yield
