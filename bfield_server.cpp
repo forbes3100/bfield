@@ -267,8 +267,13 @@ MatBlock::MatBlock(const char* name, const char* mtype, Material* mat,
 }
 
 MatBlock::MatBlock(char** args, int argc, bool insertMat) {
-    if (argc != 9)
-        throw new Err("wrong number of args");
+    if (argc != 9) {
+        if (argc < 2) {
+            throw new Err("wrong number of args");
+        } else {
+            throw new Err("wrong number of args: %s %s...", args[0], args[1]);
+        }
+    }
     strncpy(name, args[1], maxName);
     mtype =   args[0][1];
     material = Material::find(args[2]);
