@@ -16,6 +16,8 @@
 // with BField. If not, see <https://www.gnu.org/licenses/>.
 // ============================================================================
 
+#include <unistd.h>
+#include <stdio.h>
 #include <string.h>
 #ifdef __APPLE__
 #include <mach/mach_time.h>
@@ -76,8 +78,19 @@ double* Xgauss;
 double* Ygauss;
 
 void gaussianInit() {
+    char cwd[200];
+    char* r = getcwd(cwd, 200);
+    if (r == NULL) {
+        perror("getcwd");
+        throw new Err("Bad working dir");
+    }
+    printf("cwd=%s\n", cwd);
     const char* gausLCFile = "lc_output/small/src-pulse.xy";
     FILE* gf = fopen(gausLCFile, "r");
+    if (gf == 0) {
+        throw new Err("Missing %s. Unzip lc_output.zip? Or Product>Scheme>Edit>"
+                      "Run>Options>Working Dir to '$PROJECT_DIR'", gausLCFile);
+    }
     char* line = NULL;
     size_t linecap = 0;
     ssize_t ll = getline(&line, &linecap, gf);
