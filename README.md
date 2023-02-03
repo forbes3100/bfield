@@ -38,9 +38,9 @@ The simulator requires libpng. Download the latest from libpng.org (libpng-1.6.3
 	sudo make install
 ```
 
-*Mac*: Drag Blender.app to /Applications. Open bfield.xcodeproj (launches XCode), and type a Cmd-B to build it.
+**Mac**: Drag Blender.app to /Applications. Open bfield.xcodeproj (launches XCode), and type a Cmd-B to build it.
 
-*Linux*: Type "make". This builds "bfield", the simulation server, and "testmath".
+**Linux**: Type "make". This builds "bfield", the simulation server, and "testmath".
 
 Launch Blender, do File>Open and open bfield_test.blend. Drag up the bottom of the main viewport to reveal the Python console, and note the version of Python it's running. For Blender 3.4.1, it's Python 3.10.8.
 
@@ -55,49 +55,56 @@ The following python packages are required:
 
 - matplotlib
 - packaging
-- PIL           <== replaced on Ubuntu Linux by Pillow package?
+- PIL
 - pyparsing
 - cycler
-- dateutil      <== not found on Ubuntu Linux
+- dateutil
 - kiwisolver
 - six
-- mpl_toolkits  <== not found on Ubuntu Linux
+- mpl_toolkits
  
 To insure that these are all installed, type:
 
-*Linux*:
-```
-	apt-get install python3-pip
-```
+**Mac**:
 ```
 	python3.10 -m pip install matplotlib packaging PIL pyparsing cycler dateutil kiwisolver six mpl_toolkits --user
 ```
 
-This should place the packages in ~/.local/lib/python3.10/site-packages/
+**Linux**:
+```
+	apt-get install python3-pip
+	python3.10 -m pip install matplotlib packaging PIL pyparsing cycler dateutil kiwisolver six mpl_toolkits --user
+
+    mkdir pylinks
+    ln -s pylinks/modules ~/.local/lib/python3.10/site-packages
+    
+    In Blender, set Preferences>File Paths>Data>Scripts to //pylinks
+```
 
 ## Usage
 
 ### To start the simulator
 
-*Mac*: Open bfield.xcodeproj (launches XCode), and type a Cmd-R to start it running.
+**Mac**: Open bfield.xcodeproj (launches XCode), and type a Cmd-R to start it running.
 
-*Linux*: Type "./bfield" to start it.
+**Linux**: Type "./bfield" to start it.
 
 - In XCode, click "play" button (run).
 - Type "bl" to launch Blender.
 - Open file platesm.blend.
 - Click the "Run Script" button in the bfield.py pane.
 
-This adds the following keys:
+This adds the following keys (in Linux, Cmd is the Windows key):
 
-| Key   | Operation                |
-| ----- | ------------------------ |
-| Cmd-K | Clear FDTD data          |
-| Cmd-R | Run FDTD                 |
-| Cmd-P | Plot                     |
-| P     | Pause/unpause simulation |
+- **Cmd-R**: Run FDTD.
 
-The usual procedure is to select a Blender scene (each containing one test setup), then type Cmd-K and Cmd-R to start it running, and at any time a 'P' to pause followed by a Cmd-P to plot all graphs at the current simulation time, with another 'P' to continue.
+- **P**: Pause/unpause simulation.
+
+- **Cmd-P**: Plot (only while paused).
+
+- **Cmd-K**: Remove probe-generated objects before a save.
+
+The usual procedure is to select a Blender scene (each containing one test setup), then type Cmd-R to start it running, and at any time a 'P' to pause followed by a Cmd-P to plot all graphs at the current simulation time, with another 'P' to continue.
 
 ### To test the example
 
