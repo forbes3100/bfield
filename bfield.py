@@ -57,6 +57,8 @@ if 'siunits' in sys.modules:
     del sys.modules['siunits']
 import siunits as si
 
+isLinux = (os.uname()[0] == 'Linux')
+
 timeout = 2500 # sec, server communication
 
 c0 = 2.998e8    # m/s speed of light
@@ -1848,8 +1850,10 @@ class Probe(Block):
             plt.grid(True)
             plt.legend()
             plt.subplots_adjust(left=0.15, top=0.95, right=0.95)
-            plt.show(block=False)
+            if not isLinux:
+                plt.show(block=False)
             outputDir = os.path.join(cwd, 'output')
+            print(f"writing plots to {outputDir}")
             if not os.path.exists(outputDir):
                 os.mkdir(outputDir)
             plt.savefig(os.path.join(outputDir, title))
@@ -2197,6 +2201,8 @@ class Sim:
     # On-screen status display.
 
     def onScreenInit(self, context):
+        print("onScreenInit")
+        # TODO: make onScreenInit work from "Run FDTD" button too
         area = context.area
         if area and area.type == 'VIEW_3D':
             oldh = bpy.app.driver_namespace.get('fields_handle')
@@ -2221,9 +2227,10 @@ class Sim:
         scn = bpy.context.scene
         font_id = 0
         w = context.region.width
-        blf.position(font_id, w-400, 10, 0)
+        font_scale = (2, 1)[isLinux]
+        blf.position(font_id, w-200*font_scale, 10, 0)
         blf.color(font_id, 255, 255, 255, 255)
-        blf.size(font_id, 24)
+        blf.size(font_id, 12*font_scale)
         status = f"{scn.frame_current * self.dt * 1e12:9.3f} ps"
         if self and self.state > 3:
             status += '  PAUSED'
@@ -2470,7 +2477,7 @@ class FieldCleanOperator(bpy.types.Operator):
 class FieldPauseOperator(bpy.types.Operator):
     """Pause/unpause FDTD simulation (P)"""
     bl_idname = "fdtd.pause"
-    bl_label = "Pause/unpause FDTD simulation"
+    bl_label = "Pause"
 
     def invoke(self, context, event):
         global sims
@@ -2496,7 +2503,7 @@ class FieldPauseOperator(bpy.types.Operator):
 class FieldPlotOperator(bpy.types.Operator):
     """Plot probes in FDTD simulation (Cmd-P)"""
     bl_idname = "fdtd.plot"
-    bl_label = "Plot probes in FDTD simulation"
+    bl_label = "Plot probes"
 
     def invoke(self, context, event):
         global sims
@@ -2516,7 +2523,7 @@ class FieldPlotOperator(bpy.types.Operator):
 
     def modal(self, context, event):
         # wait for Cmd key to be released, or plot window messes oskey state
-        if event.type == 'OSKEY' and event.value == 'RELEASE':
+        if isLinux or (event.type == 'OSKEY' and event.value == 'RELEASE'):
             print("finishing plot")
             Probe.plotAllFinish()
             return {'FINISHED'}
@@ -2577,6 +2584,7 @@ class FieldObjectPanel(bpy.types.Panel):
                     box.label(text=f"   = {V.length:g} {units}")
 
         layout.operator("fdtd.run")
+        layout.operator("fdtd.pause")
         layout.operator("fdtd.plot")
         layout.operator("fdtd.center")
         layout.operator("fdtd.clean")
