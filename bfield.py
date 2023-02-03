@@ -1000,6 +1000,8 @@ class Probe(Block):
                     "Use mesh object for in-world chart", default=False),
         "p_dispIsPlot": bp.BoolProperty(description=
                     "Use external MatPlotLib for chart", default=True),
+        "p_plotScale": bp.FloatProperty(description=
+                    "chart scale multiplier", min=0., default=1.),
         "p_dispColor": bp.FloatVectorProperty(description=
                     "Color", subtype='COLOR',
                     size=4, min=0., max=1., default=(0.75, 0., 0.8, 1.)),
@@ -1067,6 +1069,7 @@ class Probe(Block):
             box.label(text=f"Measurement ({self.fieldUnits[ob.p_field[0]]})")
             value = 'p_value3' if ob.p_axis == 'XYZ' else 'p_value'
             box.row().prop(ob, value, text="")
+            layout.prop(ob, 'p_plotScale', text="Plot Scale")
 
         elif ob.p_shape == 'Line':
             layout.prop_search(ob, 'p_axis', scene, 'p_axes', text="Axis")
@@ -1438,6 +1441,7 @@ class Probe(Block):
             ob.p_axisSign = -1
             axis = ob.p_axis[1]
         dispType = 'Vec'
+        dispScale = ob.p_dispScale
         if ob.p_shape == 'Plane':
             if axis == 'XYZ':
                 dispType = 'RGB'
@@ -1449,6 +1453,7 @@ class Probe(Block):
                 ##self.n = self.n + 1  # voltage sources include edges ???
         elif ob.p_shape == 'Point':
             dispType = 'Mag'
+            dispScale = ob.p_plotScale
             if axis == 'XYZ':
                 dispType = 'Vec'
             if fieldName == 'V':
@@ -1473,7 +1478,7 @@ class Probe(Block):
 
         cmd = (f"{'PU'[update]} {ob.name} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
                f"{Bs.z:g} {Be.z:g} {fieldName} {dispType[0]} "
-               f"{ob.p_dispScale:g} {ob.p_sfactor} {ob.p_verbose}\n")
+               f"{dispScale:g} {ob.p_sfactor} {ob.p_verbose}\n")
         if ob.p_verbose > 1:
             print(cmd)
         self.sim.send(cmd)
@@ -1719,7 +1724,8 @@ class Probe(Block):
     def getPlotFig(self, dataShape):
         ob = self.ob
         color = None
-        figType = ob.p_shape + ob.p_field + ob.p_axis + repr(dataShape)
+        ##figType = ob.p_shape + ob.p_field + ob.p_axis + repr(dataShape)
+        figType = ob.p_shape + ob.p_field + repr(dataShape)
         fig = self.figs.get(figType)
         if not fig:
             fig = Figure()
@@ -1779,8 +1785,11 @@ class Probe(Block):
                       "xs[-1]=", xs[-1], "dt=", sim.dt)
 
             marker = '.' if len(ys) < 50 else None
+            label = ob.name
+            if ob.p_plotScale != 1:
+                label = f"{label} * {ob.p_plotScale:g}"
             plt.plot(xs.copy(), ys.copy(), marker=marker,
-                     color=color, label=ob.name)
+                     color=color, label=label)
             fn = ob.p_field
             fig.ylabel = f"{fn.capitalize()} (%s{self.fieldUnits[fn[0]]})"
             fig.max_x = max(xs[-1], fig.max_x)

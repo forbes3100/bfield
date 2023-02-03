@@ -1235,7 +1235,7 @@ struct PrVecI16H: Probe3I16 {
 */
 struct PrVecFloatH: Probe3Float {
     void wrElem(size_t idx) {
-        double3 H = double3(sp->H, idx);
+        double3 H = double3(sp->H, idx) * dispScale;
         *pfp++ = H.x/zd;
         *pfp++ = H.y/zd;
         *pfp++ = H.z/zd;
@@ -1243,7 +1243,7 @@ struct PrVecFloatH: Probe3Float {
             printCell(idx);
     }
     void sumElem(size_t idx, double sign=1.) {
-        double3 H = double3(sp->H, idx);
+        double3 H = double3(sp->H, idx) * dispScale;
         S.x += sign * H.x/zd;
         S.y += sign * H.y/zd;
         S.z += sign * H.z/zd;
@@ -1254,7 +1254,7 @@ struct PrVecFloatH: Probe3Float {
 
 struct PrVecFloatE: Probe3Float {
     void wrElem(size_t idx) {
-        double3 E = double3(sp->E, idx);
+        double3 E = double3(sp->E, idx) * dispScale;
         *pfp++ = E.x;
         *pfp++ = E.y;
         *pfp++ = E.z;
@@ -1262,7 +1262,7 @@ struct PrVecFloatE: Probe3Float {
             printCell(idx);
     }
     void sumElem(size_t idx, double sign=1.) {
-        double3 E = double3(sp->E, idx);
+        double3 E = double3(sp->E, idx) * dispScale;
         S.x += sign * E.x;
         S.y += sign * E.y;
         S.z += sign * E.z;
@@ -1273,7 +1273,7 @@ struct PrVecFloatE: Probe3Float {
 
 struct PrVecFloatJ: Probe3Float {
     void wrElem(size_t idx) {
-        double3 J = double3(sp->J, idx);
+        double3 J = double3(sp->J, idx) * dispScale;
         *pfp++ = J.x;
         *pfp++ = J.y;
         *pfp++ = J.z;
@@ -1281,7 +1281,7 @@ struct PrVecFloatJ: Probe3Float {
             printCell(idx);
     }
     void sumElem(size_t idx, double sign=1.) {
-        double3 J = double3(sp->J, idx);
+        double3 J = double3(sp->J, idx) * dispScale;
         S.x += sign * J.x;
         S.y += sign * J.y;
         S.z += sign * J.z;
@@ -1292,7 +1292,7 @@ struct PrVecFloatJ: Probe3Float {
 
 struct PrVecFloatME2: Probe3Float {
     void wrElem(size_t idx) {
-        double3 mE2 = double3(sp->mE2, idx);
+        double3 mE2 = double3(sp->mE2, idx) * dispScale;
         *pfp++ = mE2.x;
         *pfp++ = mE2.y;
         *pfp++ = mE2.z;
@@ -1300,7 +1300,7 @@ struct PrVecFloatME2: Probe3Float {
             printCell(idx);
     }
     void sumElem(size_t idx, double sign=1.) {
-        double3 mE2 = double3(sp->mE2, idx);
+        double3 mE2 = double3(sp->mE2, idx) * dispScale;
         S.x += sign * mE2.x;
         S.y += sign * mE2.y;
         S.z += sign * mE2.z;
@@ -1311,14 +1311,14 @@ struct PrVecFloatME2: Probe3Float {
 
 struct PrMagFloatH: ProbeFloat {
     void wrElem(size_t idx) {
-        double3 H = double3(sp->H, idx);
+        double3 H = double3(sp->H, idx) * dispScale;
         H.x /= zd;
         H.y /= zd;
         H.z /= zd;
         *pfp++ = H.length();
     }
     void sumElem(size_t idx, double sign=1.) {
-        double3 H = double3(sp->H, idx);
+        double3 H = double3(sp->H, idx) * dispScale;
         H.x /= zd;
         H.y /= zd;
         H.z /= zd;
@@ -1330,11 +1330,11 @@ struct PrMagFloatH: ProbeFloat {
 
 struct PrMagFloatE: ProbeFloat {
     void wrElem(size_t idx) {
-        double3 E = double3(sp->E, idx);
+        double3 E = double3(sp->E, idx) * dispScale;
         *pfp++ = E.length();
     }
     void sumElem(size_t idx, double sign=1.) {
-        double3 E = double3(sp->E, idx);
+        double3 E = double3(sp->E, idx) * dispScale;
         S.x += E.length();
         pfp++;
     }
@@ -1343,7 +1343,7 @@ struct PrMagFloatE: ProbeFloat {
 
 struct PrFloatME2: ProbeFloat {
     void wrElem(size_t idx) {
-        *pfp++ = sp->mE2.x[idx];
+        *pfp++ = sp->mE2.x[idx] * dispScale;
         //*pfp++ = sp->mE2.y[idx];
         //*pfp++ = sp->mE2.z[idx];
         //*pfp++ = sp->mE1.x[idx];
@@ -1351,7 +1351,7 @@ struct PrFloatME2: ProbeFloat {
         //*pfp++ = sp->mE1.z[idx];
     }
     void sumElem(size_t idx, double sign=1.) {
-        double3 mE2 = double3(sp->mE2, idx);
+        double3 mE2 = double3(sp->mE2, idx) * dispScale;
         S.x += mE2.x;
         S.y += mE2.y;
         S.z += mE2.z;
@@ -1363,10 +1363,10 @@ struct PrFloatME2: ProbeFloat {
 class PrFloatSigE: public ProbeFloat {
 public:
     void wrElem(size_t idx) {
-        *pfp++ = sp->sige[idx] * 1e-8;
+        *pfp++ = sp->sige[idx] * 1e-8 * dispScale;
     }
     void sumElem(size_t idx, double sign=1.) {
-        double3 mH1 = double3(sp->mH1, idx);
+        double3 mH1 = double3(sp->mH1, idx) * dispScale;
         S.x += mH1.x;
         S.y += mH1.y;
         S.z += mH1.z;
@@ -1377,10 +1377,10 @@ public:
 
 struct PrFloatSigH: ProbeFloat {
     void wrElem(size_t idx) {
-        *pfp++ = sp->sigh[idx] * 1e-8;
+        *pfp++ = sp->sigh[idx] * 1e-8 * dispScale;
     }
     void sumElem(size_t idx, double sign=1.) {
-        double3 J = double3(sp->J, idx);
+        double3 J = double3(sp->J, idx) * dispScale;
         S.x += J.x;
         S.y += J.y;
         S.z += J.z;
@@ -1392,11 +1392,11 @@ struct PrFloatSigH: ProbeFloat {
 class PrFloatJ: public ProbeFloat {
 public:
     void wrElem(size_t idx) {
-        double3 J = double3(sp->J, idx);
+        double3 J = double3(sp->J, idx) * dispScale;
         *pfp++ = J.length();
     }
     void sumElem(size_t idx, double sign=1.) {
-        double3 J = double3(sp->J, idx);
+        double3 J = double3(sp->J, idx) * dispScale;
         S.x += J.x;
         S.y += J.y;
         S.z += J.z;
@@ -1434,7 +1434,7 @@ struct PrRGBE: ProbeI32 {
 struct PrFloat1: ProbeFloat {
     virtual double getElem(size_t idx) = 0;
     void wrElem(size_t idx) {
-        *pfp++ = getElem(idx);
+        *pfp++ = getElem(idx) * dispScale;
     }
     void sumElem(size_t idx, double sign=1.) { ; }
     PrFloat1(char** args, int argc): ProbeFloat(args, argc) { }
