@@ -14,8 +14,6 @@
 
 230127: Add scene-to-python export and import, for scene source control.
 
-230129: Get bfield.py working on Linux: missing PIL module.
-
 230129: Set up Meep output comparison on Linux.
 
 230130: bfield.py: fix dynProbe stealing G,X,Y,Z keys from Blender.
@@ -25,3 +23,7 @@
 230130: bfield.py: is getMaterialsAndDims transparency working?
 
 230201: bfield.py: fix abspath("//") for import siunits.
+
+230203: bfield.py: make onScreenInit work from "Run FDTD" button too.
+
+230203: bfield.py: Track down why opkey-P doesn't work on Linux.
