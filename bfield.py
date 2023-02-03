@@ -138,6 +138,8 @@ def getMouse3D(event):
                                     region3D, mouse_pos, view_vector)
         # the 3D location converted in object local coordinates
         ##loc = object.matrix_world.inverted() * loc
+    else:
+        print(f"getMouse3D: {space_data=} {object=} {region=} {mouse_pos=}")
     return loc
 
 
@@ -1071,8 +1073,11 @@ class Probe(Block):
                 split.row().prop(ob, 'p_dispPos', text="Pos")
                 split.row().prop(ob, 'p_dispColor', text="Color")
             box = layout.box()
-            box.label(text=f"Measurement ({self.fieldUnits[ob.p_field[0]]})")
+            units = self.fieldUnits[ob.p_field[0]]
+            box.label(text=f"Measurement ({units})")
             value = 'p_value3' if ob.p_axis == 'XYZ' else 'p_value'
+            self.measurement_attr_name = value
+            self.measurement_units = units
             box.row().prop(ob, value, text="")
             layout.prop(ob, 'p_plotScale', text="Plot Scale")
 
@@ -1879,6 +1884,7 @@ blockClasses = {'FIELDS':        FieldsBlock,
 
 class Sim:
     s = None
+    mouse_pos = None
 
     def __init__(self, context):
         global sims
@@ -2208,6 +2214,7 @@ class Sim:
         # TODO: make onScreenInit work from "Run FDTD" button too
         area = context.area
         if area and area.type == 'VIEW_3D':
+            self.lastPosMeas = None
             oldh = bpy.app.driver_namespace.get('fields_handle')
             if oldh:
                 bpy.types.SpaceView3D.draw_handler_remove(oldh, 'WINDOW')
@@ -2241,14 +2248,33 @@ class Sim:
  
         ##except:       # !!! which error to ignore? not all of them!
         ##    pass
-   
-        ##mpos = self.mouse_pos
-        ##blf.draw(font_id, f"Mouse @ ({mpos[0]: 09.3f}, {mpos[1]: 09.3f})")
-        ##blf.position(font_id, 15, 115, 0)
-        ##loc = self.loc
-        ##if self.object:
-        ##    blf.draw(font_id, f"3D position from {self.object.name}: "
-        ##                      f"({loc[0]:g}, {loc[1]:g}, {loc[2]:g})")
+
+        # draw mobile-probe measurement value next to mouse pointer
+        mpos = self.mouse_pos
+        ob = bpy.context.object
+        haveDrawnMeas = False
+        if mpos and ob:
+            pblock = self.findBlock(ob)
+            if hasattr(pblock, 'measurement_attr_name'):
+                aname = pblock.measurement_attr_name
+                units = pblock.measurement_units
+                if hasattr(ob, aname):
+                    meas = getattr(ob, aname)
+                    ##print(f"drawing measurement {meas:g}")
+                    x = mpos[0] + 15
+                    y = mpos[1] + 15
+                    blf.position(font_id, x, y, 0)
+                    self.lastPosMeas = [x, y]
+                    blf.draw(font_id, f"{meas:g} {units}")
+                    haveDrawnMeas = True
+
+        # erase measurement when another object is selected
+        if not haveDrawnMeas and self.lastPosMeas is not None:
+            ##print("clearing measurement")
+            x, y = self.lastPosMeas
+            blf.position(font_id, x, y, 0)
+            blf.draw(font_id, "")
+            self.lastPosMeas = None
 
     def frameHandler(self, scene, depsgraph):
         self.area3d.tag_redraw()   # update status line
@@ -2304,6 +2330,7 @@ class FieldOperator(bpy.types.Operator):
             ##print("found block", pblock)
             if pblock:
                 loc = getMouse3D(event)
+                sim.mouse_pos = [event.mouse_region_x, event.mouse_region_y]
                 if loc is None:
                     print(f"No C.space_data for event {event}")
                 else:
