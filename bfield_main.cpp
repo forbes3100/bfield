@@ -80,6 +80,7 @@ void doCommand(int fd, char* text) {
         throw new Err("command expected");
     char cmd = args[0][0];
     size_t _ = 0;
+    int r = 0;
     char* cwd = 0;
 
     switch (cmd) {
@@ -108,8 +109,10 @@ void doCommand(int fd, char* text) {
             if (ai != 2)
                 throw new Err("chdir path expected");
             cwd = args[1];
-            chdir(cwd);
-            printf("chdir %s\n", cwd);
+            r = chdir(cwd);
+            if (r != 0)
+                throw new Err("chdir returned %d", r);
+           printf("chdir %s\n", cwd);
             _ = write(fd, "A", 1);
             break;
 
