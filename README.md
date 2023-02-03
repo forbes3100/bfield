@@ -20,23 +20,17 @@ Download Blender 3.4.1 from https://www.blender.org/download
 
 The file 'bl' is a command to launch Blender from the command line so Python output can be seen. If /usr/local/bin doesn't exist, you'll need to create it first with:
 
-```
 	sudo install -d /usr/local/bin/
-```
 
 Then type:
 
-```
 	sudo install bl /usr/local/bin/
-```
 
 The simulator requires libpng. Download the latest from libpng.org (libpng-1.6.39), untar it, cd to its directory and type:
 
-```
 	./configure
 	make
 	sudo make install
-```
 
 **Mac**: Drag Blender.app to /Applications. Open bfield.xcodeproj (launches XCode), and type a Cmd-B to build it.
 
@@ -66,20 +60,18 @@ The following python packages are required:
 To insure that these are all installed, type:
 
 **Mac**:
-```
+
 	python3.10 -m pip install matplotlib packaging PIL pyparsing cycler dateutil kiwisolver six mpl_toolkits --user
-```
 
 **Linux**:
-```
+
 	apt-get install python3-pip
 	python3.10 -m pip install matplotlib packaging PIL pyparsing cycler dateutil kiwisolver six mpl_toolkits --user
 
     mkdir pylinks
     ln -s pylinks/modules ~/.local/lib/python3.10/site-packages
     
-    In Blender, set Preferences>File Paths>Data>Scripts to //pylinks
-```
+In Blender, set Preferences>File Paths>Data>Scripts to //pylinks
 
 ## Usage
 
