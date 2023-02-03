@@ -16,8 +16,6 @@
 
 230129: Set up Meep output comparison on Linux.
 
-230130: bfield.py: fix dynProbe stealing G,X,Y,Z keys from Blender.
-
 230130: bfield.py: use a common mesh for volume probe arrows.
 
 230130: bfield.py: is getMaterialsAndDims transparency working?

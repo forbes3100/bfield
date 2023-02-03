@@ -125,16 +125,19 @@ def getMouse3D(event):
     # contextual active object, 2D and 3D regions
     object = bpy.context.object
     region = bpy.context.region
-    region3D = bpy.context.space_data.region_3d
+    space_data = bpy.context.space_data
+    loc = None
+    if space_data:
+        region3D = space_data.region_3d
 
-    # the direction indicated by the mouse position from the current view
-    view_vector = view3d_utils.region_2d_to_vector_3d(region,
-                                region3D, mouse_pos)
-    # the 3D location in this direction
-    loc = view3d_utils.region_2d_to_location_3d(region,
-                                region3D, mouse_pos, view_vector)
-    # the 3D location converted in object local coordinates
-    ##loc = object.matrix_world.inverted() * loc
+        # the direction indicated by the mouse position from the current view
+        view_vector = view3d_utils.region_2d_to_vector_3d(region,
+                                    region3D, mouse_pos)
+        # the 3D location in this direction
+        loc = view3d_utils.region_2d_to_location_3d(region,
+                                    region3D, mouse_pos, view_vector)
+        # the 3D location converted in object local coordinates
+        ##loc = object.matrix_world.inverted() * loc
     return loc
 
 
@@ -2292,38 +2295,44 @@ class FieldOperator(bpy.types.Operator):
     def dynProbe(self, event, action):
         ob = bpy.context.object
         name = ob.name if ob else "<no object>"
-        ##print("dynProbe:", action, name)
+        ##print("dynProbe:", action, name, ob.p_verbose)
+        if ob and ob.p_verbose > 0:
+            print("dynProbe:", action, name)
         sim = self.sim
         if ob and ob.get('blockType') == 'PROBE':
             pblock = sim.findBlock(ob)
             ##print("found block", pblock)
             if pblock:
                 loc = getMouse3D(event)
-                if action == 'START':
-                    ##print("dynProbe: starting move", ob.name)
-                    self.probeDrag = ob
-                    self.obRelMouse = Vector(ob.location) - Vector(loc)
-                elif action == 'MOVE':
-                    if ob.verbose > 0:
-                        print("dynProbe: moving", ob.name, pblock)
-                    obNewLoc = self.obRelMouse + Vector(loc)
-                    ##print("obNewLoc=", fv(obNewLoc))
-                    if self.lockAxis == 0:
-                        ob.location.x = obNewLoc.x
-                    elif self.lockAxis == 1:
-                        ob.location.y = obNewLoc.y
-                    elif self.lockAxis == 2:
-                        ob.location.z = obNewLoc.z
-                    else:
-                        ob.location = obNewLoc
-                    pblock.Bs, pblock.Be = bounds(ob)
-                    pblock.sendDef(update=True)
-                    pblock.lastStep -= 1
-                    pblock.doStep()
+                if loc is None:
+                    print(f"No C.space_data for event {event}")
                 else:
-                    if sim.verbose > 1:
-                        print("dynProbe: move done")
-                    self.probeDrag = None
+                    if action == 'START':
+                        if ob.p_verbose > 0:
+                            print("dynProbe: starting move", ob.name)
+                        self.probeDrag = ob
+                        self.obRelMouse = Vector(ob.location) - Vector(loc)
+                    elif action == 'MOVE':
+                        if ob.p_verbose > 0:
+                            print("dynProbe: moving", ob.name, pblock)
+                        #obNewLoc = self.obRelMouse + Vector(loc)
+                        ###print("obNewLoc=", fv(obNewLoc))
+                        #if self.lockAxis == 0:
+                        #    ob.location.x = obNewLoc.x
+                        #elif self.lockAxis == 1:
+                        #    ob.location.y = obNewLoc.y
+                        #elif self.lockAxis == 2:
+                        #    ob.location.z = obNewLoc.z
+                        #else:
+                        #    ob.location = obNewLoc
+                        pblock.Bs, pblock.Be = bounds(ob)
+                        pblock.sendDef(update=True)
+                        pblock.lastStep -= 1
+                        pblock.doStep()
+                    else:
+                        if ob.p_verbose > 1:
+                            print("dynProbe: move done")
+                        self.probeDrag = None
         return {'RUNNING_MODAL'}
 
     #--------------------------------------------------------------------------
@@ -2349,15 +2358,19 @@ class FieldOperator(bpy.types.Operator):
                     return self.dynProbe(event, 'DONE')
 
             if sim.state >= 3:
-                # TODO: fix dynProbe stealing G,X,Y,Z keys from Blender
+                ob = bpy.context.object
                 if event.type == 'G':
-                    self.lockAxis = None
-                    return self.dynProbe(event, 'START')
+                    if ob.blockType == 'PROBE' and ob.p_shape == 'Point':
+                        self.lockAxis = None
+                        self.dynProbe(event, 'START')
+                    return {'PASS_THROUGH'}
 
                 elif event.type in 'XYZ':
-                    self.lockAxis = ord(event.type) - ord('X')
-                    return {'RUNNING_MODAL'}
-            
+                    if ob.blockType == 'PROBE' and ob.p_shape == 'Point':
+                        self.lockAxis = ord(event.type) - ord('X')
+                        # return {'RUNNING_MODAL'}
+                    return {'PASS_THROUGH'}
+
                 elif event.type == 'ESC':
                     ##print("ESC pressed while in sim")
                     return self.cancel(context)
@@ -2367,18 +2380,23 @@ class FieldOperator(bpy.types.Operator):
                 return self.cancel(context)
 
         elif event.value == 'RELEASE':
+            ##print(f"Release: {inWin=} {self.probeDrag=} {event.type=}")
             if not inWin:
                 return {'PASS_THROUGH'}
             if self.probeDrag:
-                if event.type == 'MOUSEMOVE':
-                    return self.dynProbe(event, 'MOVE')
-                elif event.type in ('LEFTMOUSE', 'RET', 'ESC'):
+                #if event.type == 'MOUSEMOVE':
+                #    return self.dynProbe(event, 'MOVE')
+                if event.type in ('LEFTMOUSE', 'RET', 'ESC'):
                     return self.dynProbe(event, 'DONE')
 
         elif event.type == 'TIMER':
             if self.timer is None:
                 return {'CANCELLED'}
             else:
+                ##print(f"Timer: {inWin=} {self.probeDrag=} {event.type=}")
+                if inWin and self.probeDrag:
+                    return self.dynProbe(event, 'MOVE')
+
                 try:
                     sim.gen.__next__()
                 except StopIteration:
