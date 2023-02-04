@@ -25,3 +25,5 @@
 230203: bfield.py: make onScreenInit work from "Run FDTD" button too.
 
 230203: bfield.py: Track down why opkey-P doesn't work on Linux.
+
+230203: Track down random "No C.space_data" with dynProbe, and random 0 values.
