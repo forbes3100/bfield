@@ -1832,11 +1832,17 @@ class Probe(Block):
             range_y = fig.max_y - fig.min_y
             y_si = si.si(range_y)
             units_x = x_si[-1]
+            if units_x.isdigit():
+                units_x = ''
             units_y = y_si[-1]
+            if units_y.isdigit():
+                units_y = ''
             scale_x = si.SIPowers.get(units_x)
             scale_y = si.SIPowers.get(units_y)
-            if scale_x:
-                print(f"Scaling plot X axis by {10**scale_x:g} ({units_x})")
+            ##print(f"{fig.min_y=} {fig.max_y=} {range_y=} {y_si=} "
+            ##      f"{units_y=} {scale_y=}")
+            if scale_x is not None:
+                ##print(f"Scaling plot X axis by {10**scale_x:g} ({units_x})")
                 if 0:
                     ticks_x = ticker.FuncFormatter(lambda x,
                                     pos: '{0:g}'.format(x/10**scale_x))
@@ -1845,8 +1851,8 @@ class Probe(Block):
                     fig.ax.xaxis.set_major_formatter(NFmtr(scale_x))
             else:
                 units_x = ''
-            if scale_y:
-                print(f"Scaling plot Y axis by {10**scale_y:g} ({units_y})")
+            if scale_y is not None:
+                ##print(f"Scaling plot Y axis by {10**scale_y:g} ({units_y})")
                 ##ticks_y = ticker.FuncFormatter(lambda y,
                 ##                pos: '{0:g}'.format(y/10**scale_y))
                 ##fig.ax.yaxis.set_major_formatter(ticks_y)
@@ -1854,7 +1860,9 @@ class Probe(Block):
             else:
                 units_y = ''
             plt.xlabel(f"{fig.xlabel} ({units_x}{fig.xunit})")
-            plt.ylabel(fig.ylabel % units_y)
+            yl = fig.ylabel % units_y
+            yl = yl.replace("kV/m", "V/mm").replace("kA/m", "A/mm")
+            plt.ylabel(yl)
             plt.grid(True)
             plt.legend()
             plt.subplots_adjust(left=0.15, top=0.95, right=0.95)
@@ -1981,8 +1989,8 @@ class Sim:
             'FieldM':   ((0, 1, 0, 1.),          0, 0, 0),
             'FieldJ':   ((0, 1, 1, 1.),          0, 0, 0),
             'Air':      ((0.5, 0.5, 1, 0.1),     1., 1., 0.),
-            'Copper':   ((0.66, 0.17, .02, 1.),  1., 1., 9.8e7),
-            'Copper-T': ((0.66, 0.17, .02, 0.3), 1., 1., 9.8e7),
+            'Copper':   ((0.45, 0.14, .06, 1.),  1., 1., 9.8e7),
+            'Copper-T': ((0.45, 0.15, .06, 0.3), 1., 1., 9.8e7),
         }
         for k,v in mats.items():
             m = bmats.get(k)
@@ -2332,7 +2340,8 @@ class FieldOperator(bpy.types.Operator):
                 loc = getMouse3D(event)
                 sim.mouse_pos = [event.mouse_region_x, event.mouse_region_y]
                 if loc is None:
-                    print(f"No C.space_data for event {event}")
+                    print(f"No C.space_data: {event.type=} {event.value=} "
+                          f"{event.mouse_region_x=}")
                 else:
                     if action == 'START':
                         if ob.p_verbose > 0:
