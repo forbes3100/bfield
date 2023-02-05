@@ -27,3 +27,9 @@
 230203: bfield.py: Track down why opkey-P doesn't work on Linux.
 
 230203: Track down random "No C.space_data" with dynProbe, and random 0 values.
+
+230204: Fix plane probe image rotation in some cases.
+
+230204: Finish R and C block types: should insure unique material.
+
+230205: server: fix crash in stopSim() if 0Fields object changed?

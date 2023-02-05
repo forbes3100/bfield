@@ -620,6 +620,8 @@ class FieldsBlock(MatBlock):
     props = {
         "dx": bp.FloatProperty(description="Grid cell spacing, mm",
                     min=0., default=1.),
+        "stop_ps": bp.FloatProperty(description="When to stop sim, in ps",
+                    min=0., default=0.),
         "usPoll": bp.IntProperty(description="us/Step",
                     min=0, default=50),
         "msRate": bp.IntProperty(description="ms/Update",
@@ -696,6 +698,9 @@ class Resistor(MatBlock):
         R = ob.resistance
         sige = 1. / R
         N = self.Be - self.Bs
+        if N.x < 0 or N.y < 0 or N.z < 0:
+            print(f"*** Resistor {ob.name} rotated?")
+            return
         axis = ob.axis[-1]
         if axis == 'X':
             sige = sige * N.x / (N.y * N.z)
@@ -703,12 +708,13 @@ class Resistor(MatBlock):
             sige = sige * N.y / (N.x * N.z)
         elif axis == 'Z':
             sige = sige * N.z / (N.x * N.y)
-            ##print("sige=", N.z, "/ (", N.x, N.y, R, ") /", mm)
         sige = sige / mm
 
         m = ob.active_material
+        print(f"{R=} N=({N.x:3f},{N.y:3f},{N.z:3f}) -> sige={sige:7.4f}, {m=}")
         if m is None:
             m = bpy.data.materials.new(name=f"Carbon-{ob.name}")
+            print("Created resistor material")
         m.mur = 1.0
         m.epr = 1.0
         m.sige = sige
@@ -747,22 +753,28 @@ class Capacitor(MatBlock):
             yield
         C = ob.capacitance
         N = self.Be - self.Bs
+        if N.x < 0 or N.y < 0 or N.z < 0:
+            print(f"*** Capacitor {ob.name} rotated?")
+            return
         axis = ob.axis[-1]
+        # epr = d/(C*A)
+        rC = 1 / C
         if axis == 'X':
-            sige = sige * N.x / (N.y * N.z)
+            epr = rC * N.x / (N.y * N.z)
         elif axis == 'Y':
-            sige = sige * N.y / (N.x * N.z)
+            epr = rC * N.y / (N.x * N.z)
         elif axis == 'Z':
-            sige = sige * N.z / (N.x * N.y)
-            ##print("sige=", N.z, "/ (", N.x, N.y, R, ") /", mm)
-        sige = sige / mm
+            epr = rC * N.z / (N.x * N.y)
+        epr = epr / mm
 
         m = ob.active_material
+        print(f"{C=} N=({N.x:3f},{N.y:3f},{N.z:3f}) -> epr={epr:g}, {m=}")
         if m is None:
-            m = bpy.data.materials.new(name=f"Carbon-{ob.name}")
+            m = bpy.data.materials.new(name=f"Cap-{ob.name}")
+            print("Created capacitor material")
         m.mur = 1.0
-        m.epr = 1.0
-        m.sige = sige
+        m.epr = epr
+        m.sige = 0.0
         print("material:", m.name)
 
     def sendDef_G(self):
@@ -2156,6 +2168,12 @@ class Sim:
         for block in self.blocks:
             if hasattr(block, 'doStep') and not block.ob.hide_viewport:
                 block.doStep()
+            stop_ps = self.stop_ps
+            current_ps = scn.frame_current * self.dt * 1e12
+            ##print(f"{stop_ps=} {self.frame_no=} {self.dt=} {current_ps}")
+            if stop_ps > 0 and current_ps > stop_ps:
+                print("Reached stop time")
+                fieldOperator.cancel(bpy.context)
             if self.state == 0:
                 print("doStepBlocks stopped")
                 break
@@ -2202,7 +2220,6 @@ class Sim:
             if self.state == 3:
                 self.doStepBlocks()
         print("stepWholeFDTD_G done")
-        raise StopIteration
 
     #--------------------------------------------------------------------------
     # Tell the server to pause/unpause simulation.
@@ -2250,8 +2267,11 @@ class Sim:
         blf.color(font_id, 255, 255, 255, 255)
         blf.size(font_id, 12*font_scale)
         status = f"{scn.frame_current * self.dt * 1e12:9.3f} ps"
-        if self and self.state > 3:
-            status += '  PAUSED'
+        if self:
+            if self.state > 3:
+                status += '  PAUSED'
+            elif self.state == 0:
+                status += '  STOPPED'
         blf.draw(font_id, status)
  
         ##except:       # !!! which error to ignore? not all of them!
@@ -2612,6 +2632,7 @@ class FieldObjectPanel(bpy.types.Panel):
         layout = self.layout
         scene = context.scene
         ob = context.object
+        fob = getFieldsOb(bpy.context, create=False)
         layout.prop_search(ob, "blockType", scene, "blockTypes",
                            text="Block type")
         bt = ob.blockType
@@ -2637,11 +2658,16 @@ class FieldObjectPanel(bpy.types.Panel):
                     box.label(text=f"{field} = {gv(V)} {units}")
                     box.label(text=f"   = {V.length:g} {units}")
 
-        layout.operator("fdtd.run")
-        layout.operator("fdtd.pause")
-        layout.operator("fdtd.plot")
-        layout.operator("fdtd.center")
+        spit = layout.split()
+        col = spit.column()
+        col.operator("fdtd.run")
+        col.operator("fdtd.pause")
+        col = spit.column()
+        col.prop(fob, "stop_ps", text="Stop ps")
+        col.operator("fdtd.plot")
+
         layout.operator("fdtd.clean")
+        layout.operator("fdtd.center")
 
 def populateTypes(scene):
     bpy.app.handlers.depsgraph_update_pre.remove(populateTypes)
@@ -2742,6 +2768,7 @@ def register():
 
     bpy.types.Scene.blockTypes = bp.CollectionProperty(
                                             type=bpy.types.PropertyGroup)
+
     for k,block in blockClasses.items():
         if hasattr(block, 'registerTypes'):
             block.registerTypes()
