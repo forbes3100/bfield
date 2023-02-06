@@ -1020,6 +1020,8 @@ class Probe(Block):
                     "Use mesh object for in-world chart", default=False),
         "p_dispIsPlot": bp.BoolProperty(description=
                     "Use external MatPlotLib for chart", default=True),
+        "p_legendLoc": bp.StringProperty(description=
+                    "Plot legend location", default="best"),
         "p_plotScale": bp.FloatProperty(description=
                     "chart scale multiplier", min=0., default=1.),
         "p_dispColor": bp.FloatVectorProperty(description=
@@ -1043,6 +1045,7 @@ class Probe(Block):
         ts.p_fieldsMag = bp.CollectionProperty(type=bpy.types.PropertyGroup)
         ts.p_axes   = bp.CollectionProperty(type=bpy.types.PropertyGroup)
         ts.p_shapes = bp.CollectionProperty(type=bpy.types.PropertyGroup)
+        ts.p_legendLocs = bp.CollectionProperty(type=bpy.types.PropertyGroup)
 
     @classmethod
     def unregisterTypes(self):
@@ -1050,6 +1053,7 @@ class Probe(Block):
         del bpy.types.Scene.p_fieldsMag
         del bpy.types.Scene.p_axes
         del bpy.types.Scene.p_shapes
+        del bpy.types.Scene.p_legendLocs
 
     @classmethod
     def populateTypes(self, scene):
@@ -1065,6 +1069,11 @@ class Probe(Block):
         scene.p_shapes.clear()
         for k in ('Point', 'Line', 'Plane', 'Volume'):
             scene.p_shapes.add().name = k
+        scene.p_legendLocs.clear()
+        for k in ('best', 'upper right', 'upper left', 'lower left',
+                  'lower right', 'right', 'center left', 'center right',
+                  'lower center', 'upper center', 'center'):
+            scene.p_legendLocs.add().name = k
 
     @classmethod
     def drawProps(self, ob, layout, scene):
@@ -1093,6 +1102,8 @@ class Probe(Block):
             self.measurement_units = units
             box.row().prop(ob, value, text="")
             layout.prop(ob, 'p_plotScale', text="Plot Scale")
+            layout.prop_search(ob, 'p_legendLoc', scene, 'p_legendLocs',
+                               text="Legend location")
 
         elif ob.p_shape == 'Line':
             layout.prop_search(ob, 'p_axis', scene, 'p_axes', text="Axis")
@@ -1813,6 +1824,7 @@ class Probe(Block):
                 label = f"{label} * {ob.p_plotScale:g}"
             plt.plot(xs.copy(), ys.copy(), marker=marker,
                      color=color, label=label)
+            plt.legend(loc=ob.p_legendLoc)
             fn = ob.p_field
             fig.ylabel = f"{fn.capitalize()} (%s{self.fieldUnits[fn[0]]})"
             fig.max_x = max(xs[-1], fig.max_x)
@@ -1877,7 +1889,6 @@ class Probe(Block):
             yl = yl.replace("kV/m", "V/mm").replace("kA/m", "A/mm")
             plt.ylabel(yl)
             plt.grid(True)
-            plt.legend(loc='center right')
             plt.subplots_adjust(left=0.15, top=0.95, right=0.95)
             if not isLinux:
                 plt.show(block=False)
