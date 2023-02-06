@@ -449,6 +449,7 @@ class MeshMatBlock(MatBlock):
         ifactor = 4
         nx = max(sim.grid(2*r) * ifactor, 1)
         nz = max(sim.grid(D.z) * ifactor, 1)
+        ##print(f"Plane {ob.name}: {D.z=} {sim.grid(D.z)=} {nz=}")
         mat = self.getFieldMat()
 
         # only create directory of cached files if it doesn't exist
@@ -1989,7 +1990,7 @@ class Sim:
         return r
 
     def grid(self, x):
-        return ma.floor(x/self.dx)
+        return round(x / self.dx)
 
     #--------------------------------------------------------------------------
 
