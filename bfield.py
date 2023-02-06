@@ -693,7 +693,7 @@ class Resistor(MatBlock):
 
     def prepare_G(self):
         ob = self.ob
-        print("Resistor.prepare_G", ob.name, ob.axis)
+        ##print("Resistor.prepare_G", ob.name, ob.axis)
         for _ in super().prepare_G():
             yield
         R = ob.resistance
@@ -712,7 +712,7 @@ class Resistor(MatBlock):
         sige = sige / mm
 
         m = ob.active_material
-        print(f"{R=} N=({N.x:3f},{N.y:3f},{N.z:3f}) -> sige={sige:7.4f}, {m=}")
+        ##print(f"{R=} N=({N.x:3f},{N.y:3f},{N.z:3f}): sige={sige:g}, {m=}")
         if m is None:
             m = bpy.data.materials.new(name=f"Carbon-{ob.name}")
             print("Created resistor material")
@@ -749,7 +749,7 @@ class Capacitor(MatBlock):
 
     def prepare_G(self):
         ob = self.ob
-        print("Capacitor.prepare_G", ob.name, ob.axis)
+        ##print("Capacitor.prepare_G", ob.name, ob.axis)
         for _ in super().prepare_G():
             yield
         C = ob.capacitance
@@ -769,7 +769,7 @@ class Capacitor(MatBlock):
         epr = epr / mm
 
         m = ob.active_material
-        print(f"{C=} N=({N.x:3f},{N.y:3f},{N.z:3f}) -> epr={epr:g}, {m=}")
+        ##print(f"{C=} N=({N.x:3f},{N.y:3f},{N.z:3f}): epr={epr:g}, {m=}")
         if m is None:
             m = bpy.data.materials.new(name=f"Cap-{ob.name}")
             print("Created capacitor material")
@@ -1877,7 +1877,7 @@ class Probe(Block):
             yl = yl.replace("kV/m", "V/mm").replace("kA/m", "A/mm")
             plt.ylabel(yl)
             plt.grid(True)
-            plt.legend()
+            plt.legend(loc='center right')
             plt.subplots_adjust(left=0.15, top=0.95, right=0.95)
             if not isLinux:
                 plt.show(block=False)
@@ -1927,6 +1927,7 @@ class Sim:
         if self.verbose > 0:
             print("Sim init: have fob", fob.name)
         self.tms = int(time.time()*1000)
+        ##print(f"sim {id(self)} init: state=0")
         self.state = 0
         self.history = {}
         self.dt = 0.
@@ -2176,7 +2177,7 @@ class Sim:
                 print("Reached stop time")
                 fieldOperator.cancel(bpy.context)
             if self.state == 0:
-                print("doStepBlocks stopped")
+                ##print("doStepBlocks stopped")
                 break
         scn.frame_set(scn.frame_current + 1)
 
@@ -2184,7 +2185,7 @@ class Sim:
     # Do one timer step: first initialize simulation, then step it.
 
     def stepWholeFDTD_G(self):
-        print("stepWholeFDTD_G start")
+        ##print("stepWholeFDTD_G start")
         self.getMaterialsAndDims()
 
         try:
@@ -2215,12 +2216,13 @@ class Sim:
         except IOError:
             print("*** Start Field Server first! ***")
             raise
+        ##print(f"sim {id(self)} stepWholeFDTD_G: set state=3, looping")
         self.state = 3
         while self.state > 0:
             yield
             if self.state == 3:
                 self.doStepBlocks()
-        print("stepWholeFDTD_G done")
+        ##print("stepWholeFDTD_G done")
 
     #--------------------------------------------------------------------------
     # Tell the server to pause/unpause simulation.
@@ -2236,12 +2238,13 @@ class Sim:
     # On-screen status display.
 
     def onScreenInit(self, context):
-        print("onScreenInit")
         # TODO: make onScreenInit work from "Run FDTD" button too
         area = context.area
+        ##print(f"onScreenInit {id(self)} {area=}")
         if area and area.type == 'VIEW_3D':
             self.lastPosMeas = None
             oldh = bpy.app.driver_namespace.get('fields_handle')
+            ##print(f"onScreenInit: in 3D area, {oldh=}")
             if oldh:
                 bpy.types.SpaceView3D.draw_handler_remove(oldh, 'WINDOW')
             args = (context,)
@@ -2249,6 +2252,7 @@ class Sim:
                         self.drawCallback, args, 'WINDOW', 'POST_PIXEL')
             posth = bpy.app.handlers.frame_change_post
             if self.frameHandler in posth:
+                ##print("onScreenInit: deleting old post handler")
                 del posth[self.frameHandler]
             posth.append(self.frameHandler)
             self.area3d = context.area
@@ -2259,7 +2263,6 @@ class Sim:
         ##try:
  
         ##print("trying draw status")
-        ##print("self=", self)
         scn = bpy.context.scene
         font_id = 0
         w = context.region.width
@@ -2269,6 +2272,7 @@ class Sim:
         blf.size(font_id, 12*font_scale)
         status = f"{scn.frame_current * self.dt * 1e12:9.3f} ps"
         if self:
+            ##print(f"sim {id(self)} drawCallback: state={self.state}")
             if self.state > 3:
                 status += '  PAUSED'
             elif self.state == 0:
@@ -2306,10 +2310,11 @@ class Sim:
             self.lastPosMeas = None
 
     def frameHandler(self, scene, depsgraph):
+        ##print(f"frameHandler {id(self)}")
         self.area3d.tag_redraw()   # update status line
 
     def onScreenRemove(self, dummy1, dummy2):
-        ##print("onScreenRemove", self)
+        ##print(f"onScreenRemove {id(self)}")
         bpy.types.SpaceView3D.draw_handler_remove(self.handle, 'WINDOW')
         bpy.app.driver_namespace.pop('fields_handle')
         bpy.context.area.tag_redraw()
@@ -2429,11 +2434,15 @@ class FieldOperator(bpy.types.Operator):
                     return {'PASS_THROUGH'}
 
                 elif event.type == 'ESC':
-                    ##print("ESC pressed while in sim")
+                    print("ESC pressed while in sim")
                     return self.cancel(context)
+                    # refresh viewport to update status line
+                    # note: kills context.area, used in onScreenInit
+                    bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP',
+                                            iterations=1)
 
             elif event.type == 'ESC':
-                ##print("ESC pressed")
+                print("ESC pressed")
                 return self.cancel(context)
 
         elif event.value == 'RELEASE':
@@ -2483,6 +2492,7 @@ class FieldOperator(bpy.types.Operator):
         sim = sims.get(context.scene)
         print("\n=== Starting BField FDTD simulation ===")
         self.context = context
+        ##print(f" {context.area=}")
         winrgn = context.area.regions[-1]
         self.winStart = S = Vector((winrgn.x, winrgn.y))
         self.winEnd = E = self.winStart + Vector((winrgn.width, winrgn.height))
@@ -2502,6 +2512,7 @@ class FieldOperator(bpy.types.Operator):
         return self.invoke(context, None)
 
     def cancel(self, context):
+        ##print(f"cancel start: {context.area=}")
         sim = self.sim
         scn = context.scene
         s = sim.s
@@ -2510,11 +2521,9 @@ class FieldOperator(bpy.types.Operator):
             s.close()
         if self.timer:
             self.stopTimer()
+        ##print(f"sim {id(sim)} cancel: state=0")
         sim.state = 0
         scn.frame_end = scn.frame_current
-
-        # refresh viewport to remove any "PAUSED" on status line
-        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
         print("FDTD stopped.")
         return {'CANCELLED'}

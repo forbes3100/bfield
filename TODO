@@ -33,3 +33,7 @@
 230204: Finish R and C block types: should insure unique material.
 
 230205: server: fix crash in stopSim() if 0Fields object changed?
+
+230205: bfield.py: insure that plane probe images are unique.
+
+230205: PML appears to be out of whack.
