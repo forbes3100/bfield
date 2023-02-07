@@ -13,8 +13,6 @@
 
 230129: Set up Meep output comparison on Linux.
 
-230130: bfield.py: is getMaterialsAndDims transparency working?
-
 230201: bfield.py: fix abspath("//") for import siunits.
 
 230203: bfield.py: make onScreenInit work from "Run FDTD" button too.

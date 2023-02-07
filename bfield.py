@@ -2058,16 +2058,17 @@ class Sim:
             m = bmats.get(k)
             if m is None:
                 m = bmats.new(name=k)
-            ##print(f"getMaterialsAndDims: {k}")
-            #print(f"m.diffuse_color={m.diffuse_color}")
-            #m.diffuse_color = (0, 0, 1)
-            #m['mur'] = 0
-            #m['epr'] = 0
-            #m['sige'] = 0
             (m.diffuse_color, m['mur'], m['epr'], m['sige']) = v
-            # TODO: replace mat.use_transparency with PrincipledBSDFWrapper?
-            ##if m.diffuse_color[3] < 1:
-            ##    m.use_transparency = True
+            m.use_fake_user = True
+            alpha = m.diffuse_color[3]
+            if alpha < 1:
+                m.use_nodes = True
+                print(f"{m.name}: setting alpha to {alpha}")
+                m.node_tree.nodes["Principled BSDF"
+                    ].inputs[0].default_value = m.diffuse_color
+                m.node_tree.nodes["Principled BSDF"
+                    ].inputs['Alpha'].default_value = alpha
+                m.blend_method = 'BLEND'
 
         # get simulation area dimensions from parent Fields object
         scn = bpy.context.scene
