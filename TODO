@@ -6,9 +6,6 @@
 190614: Fix (or at least warn) case where Fields object size or location is
          off-grid, which causes Probe.Vol int-size errors, impedance errors.
 
-190615: Have resistor blocks automatically calculate their conductivity given
-         a resistance. Maybe automate cap blocks too.
-
 230126: Fix "CustomData_blend_write error: layer '':15 - can't be written to
          file" upon file save.
 
