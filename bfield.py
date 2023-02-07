@@ -173,6 +173,12 @@ def gv(V):
 # Get an object's bounds box dimensions in global coordinates.
 
 def bounds(ob):
+    # bound_box only usable when unrotated & unscaled
+    if ob.rotation_euler != Euler((0., 0., 0.), 'XYZ'):
+        print(f"**** Object {ob.name} needs Apply Rotation!")
+    if ob.scale != Vector((1., 1., 1.)):
+        print(f"**** Object {ob.name} needs Apply Scale!")
+
     bb = ob.bound_box
     Bs = ob.matrix_world @ Vector(bb[0])
     Be = ob.matrix_world @ Vector(bb[6])
@@ -2684,7 +2690,8 @@ class FieldObjectPanel(bpy.types.Panel):
         col.operator("fdtd.run")
         col.operator("fdtd.pause")
         col = spit.column()
-        col.prop(fob, "stop_ps", text="Stop ps")
+        if fob:
+            col.prop(fob, "stop_ps", text="Stop ps")
         col.operator("fdtd.plot")
 
         layout.operator("fdtd.clean")
