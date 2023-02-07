@@ -1317,9 +1317,13 @@ class Probe(Block):
                                 print(f"removing old wrong-sized "
                                       f"{img.generated_width}x"
                                       f"{img.generated_height} image")
-                            mesh.materials.clear()
+                            mat = None
+                    else:
+                        mat = None
+                else:
+                    mat = None
 
-            if len(mesh.materials) < 1 or mesh.materials[0] is None:
+            if mat is None:
                 # create a new material with an image texture
                 if ob.p_verbose > 1:
                     print(f"Probe: creating {nix}x{niy} image plane")
@@ -2018,7 +2022,7 @@ class Sim:
             (m.diffuse_color, m['mur'], m['epr'], m['sige']) = v
             m.use_fake_user = True
             alpha = m.diffuse_color[3]
-            if alpha < 1:
+            if alpha < 0.99:
                 m.use_nodes = True
                 ##print(f"{m.name}: setting alpha to {alpha}")
                 node = m.node_tree.nodes["Principled BSDF"]
