@@ -73,6 +73,10 @@ To insure that these are all installed, type:
     
 In Blender, set Preferences>File Paths>Data>Scripts to //pylinks
 
+You may also wish to disable the Ubuntu's use of Super-P. See
+https://askubuntu.com/questions/68463/how-to-disable-global-super-p-shortcut
+
+
 ## Usage
 
 ### To start the simulator
@@ -82,11 +86,15 @@ In Blender, set Preferences>File Paths>Data>Scripts to //pylinks
 **Linux**: Type "./bfield" to start it.
 
 - In XCode, click "play" button (run).
-- Type "bl" to launch Blender.
+
+**Mac**: Type "bl" to launch Blender.
+
+**Linux**: type "blender" to launch Blender.
+
 - Open file platesm.blend.
 - Click the "Run Script" button in the bfield.py pane.
 
-This adds the following keys (in Linux, Cmd is the Windows key):
+This adds the following keys (in Linux, Cmd is the Super key):
 
 - **Cmd-R**: Run FDTD.
 
