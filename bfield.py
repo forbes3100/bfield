@@ -1465,24 +1465,21 @@ class Probe(Block):
                 h = dx * 0.5
                 verts = ((0,r,r), (0,r,-r), (0,-r,-r), (0,-r,r), (h,0,0))
                 faces = ((1,0,4), (4,2,1), (4,3,2), (4,0,3), (0,1,2,3))
-                # TODO: use common mesh, since Outliner now fixed
-                ##mesh = bpy.data.meshes.new(name='Arrow')
-                ##mesh.from_pydata(verts, [], faces)
-                ##mesh.update()
+                # use common mesh, since Outliner now fixed
+                mesh = bpy.data.meshes.new(name='Arrow')
+                mesh.from_pydata(verts, [], faces)
+                mesh.update()
                 mat = bmats[f"Field{fieldName}"]
+                mesh.materials.append(mat)
                 for i in range(0, nx, sfactor):
                     for j in range(0, ny, sfactor):
                         for k in range(0, nz, sfactor):
                             # arrow name must be in sortable format
                             name = (f"{fieldName}{Is.i+i:03}"
                                     f"{Is.j+j:03}{Is.k+k:03}")
-                            mesh = bpy.data.meshes.new(name)
-                            mesh.from_pydata(verts, [], faces)
-                            mesh.update()
                             arrow = objs.new(name, mesh)
                             # loc relative to parent
                             arrow.location = (dx*i+D2.x, dx*j+D2.y, dx*k+D2.z)
-                            arrow.data.materials.append(mat)
                             ##scn.objects.link(arrow)
                             arrow.parent = ob
                             collection.objects.link(arrow)

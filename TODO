@@ -13,8 +13,6 @@
 
 230129: Set up Meep output comparison on Linux.
 
-230130: bfield.py: use a common mesh for volume probe arrows.
-
 230130: bfield.py: is getMaterialsAndDims transparency working?
 
 230201: bfield.py: fix abspath("//") for import siunits.
