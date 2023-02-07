@@ -68,11 +68,6 @@ mm = 0.001      # m/mm
 timeUnits = {'sec': 1., 'ms': 1e-3, 'us': 1e-6, 'ns': 1e-9, 'ps': 1e-12,
              'fs': 1e-15}
 
-#layerMain   = 0
-#layerSnap   = 10
-#layerH      = 11
-#layerE      = 12
-
 # Name of layer collection, of which there must be exactly one of
 # each visible. Will be created if needed.
 
@@ -109,6 +104,11 @@ collPlane = StandardCollection("Plane")
 collE = StandardCollection("E")
 collH = StandardCollection("H")
 
+# sim states
+STOPPED = 0
+INITIALIZING = 1
+RUNNING = 3
+PAUSED = 4
 
 sims = {}       # dictionary of FDTD simulations, indexed by scene
 fieldOperator = None
@@ -1658,7 +1658,7 @@ class Probe(Block):
                 ##    print(f" d={self.dist:5.2}mm v={v:9.4}V")
                 ##else:
                 ##    print()
-            ##if sim.state < 4:
+            ##if sim.state < PAUSED:
                 ### not paused (why only not-paused???)
                 ##data = v
                 ##print("Point: data=v=", data)
@@ -1688,7 +1688,7 @@ class Probe(Block):
                 I = Hx * dl
                 if ob.p_verbose:
                     print(ob.name, "sum=", S, "dl=", dl, "H=", Hx, "I=", I)
-                if sim.state < 4:
+                if sim.state < PAUSED:
                     ob.p_value3 = I
                     data = (S, dl, Hx, I)
                     ##self.drawChartStep(I)
@@ -1936,6 +1936,7 @@ class Sim:
         if len(obs) != 1:
             raise KeyError("expected to find one '0Fields' object")
         preob = obs[0]
+        self.state = INITIALIZING
         self.dx = preob.dx
         self.fieldsBlock = FieldsBlock(preob, self)
         self.fieldsOb = fob = self.fieldsBlock.ob
@@ -1945,7 +1946,6 @@ class Sim:
             print("Sim init: have fob", fob.name)
         self.tms = int(time.time()*1000)
         ##print(f"sim {id(self)} init: state=0")
-        self.state = 0
         self.history = {}
         self.dt = 0.
         self.activeOb = context.object
@@ -2164,7 +2164,6 @@ class Sim:
 
         # send defintions for sim objects
         for block in self.blocks:
-            block.state = 0
             if block != self.fieldsBlock:
                 for _ in block.sendDef_G():
                     yield
@@ -2187,13 +2186,13 @@ class Sim:
         for block in self.blocks:
             if hasattr(block, 'doStep') and not block.ob.hide_viewport:
                 block.doStep()
-            stop_ps = self.stop_ps
+            stop_ps = self.fieldsOb.get('stop_ps', 0)
             current_ps = scn.frame_current * self.dt * 1e12
             ##print(f"{stop_ps=} {self.frame_no=} {self.dt=} {current_ps}")
             if stop_ps > 0 and current_ps > stop_ps:
                 print("Reached stop time")
                 fieldOperator.cancel(bpy.context)
-            if self.state == 0:
+            if self.state == STOPPED:
                 ##print("doStepBlocks stopped")
                 break
         scn.frame_set(scn.frame_current + 1)
@@ -2234,10 +2233,10 @@ class Sim:
             print("*** Start Field Server first! ***")
             raise
         ##print(f"sim {id(self)} stepWholeFDTD_G: set state=3, looping")
-        self.state = 3
-        while self.state > 0:
+        self.state = RUNNING
+        while self.state != STOPPED:
             yield
-            if self.state == 3:
+            if self.state == RUNNING:
                 self.doStepBlocks()
         ##print("stepWholeFDTD_G done")
 
@@ -2290,9 +2289,9 @@ class Sim:
         status = f"{scn.frame_current * self.dt * 1e12:9.3f} ps"
         if self:
             ##print(f"sim {id(self)} drawCallback: state={self.state}")
-            if self.state > 3:
+            if self.state == PAUSED:
                 status += '  PAUSED'
-            elif self.state == 0:
+            elif self.state == STOPPED:
                 status += '  STOPPED'
         blf.draw(font_id, status)
  
@@ -2436,7 +2435,7 @@ class FieldOperator(bpy.types.Operator):
                 if event.type in ('LEFTMOUSE', 'RET', 'ESC'):
                     return self.dynProbe(event, 'DONE')
 
-            if sim.state >= 3:
+            if sim.state >= RUNNING:
                 ob = bpy.context.object
                 if event.type == 'G':
                     if ob.blockType == 'PROBE' and ob.p_shape == 'Point':
@@ -2515,7 +2514,7 @@ class FieldOperator(bpy.types.Operator):
         self.winEnd = E = self.winStart + Vector((winrgn.width, winrgn.height))
         ##print("win @", fv(S), fv(E))
         if sim:
-            if sim.state > 0:
+            if sim.state != STOPPED:
                 print("Stopping current sim")
                 sim.operator.cancel(context)
         self.sim = Sim(context)
@@ -2539,7 +2538,7 @@ class FieldOperator(bpy.types.Operator):
         if self.timer:
             self.stopTimer()
         ##print(f"sim {id(sim)} cancel: state=0")
-        sim.state = 0
+        sim.state = STOPPED
         scn.frame_end = scn.frame_current
 
         print("FDTD stopped.")
@@ -2584,16 +2583,16 @@ class FieldPauseOperator(bpy.types.Operator):
         global sims
         sim = sims[context.scene]
         ##print("Pause-FDTD invoke")
-        if not sim or sim.state < 3:
+        if not sim or sim.state < RUNNING:
             print("FDTD not running")
-        elif sim.state == 3:
+        elif sim.state == RUNNING:
             print("=== PAUSE ===")
             sim.pause(context)
-            sim.state = 4
+            sim.state = PAUSED
         else:
             print("=== UNPAUSE ===")
             sim.pause(context)
-            sim.state = 3
+            sim.state = RUNNING
         return {'FINISHED'}
 
     def execute(self, context):
