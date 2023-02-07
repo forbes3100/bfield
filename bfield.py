@@ -42,18 +42,13 @@ import os
 import time
 import re
 from subprocess import Popen, PIPE
-##import matplotlib
-# backend, chosen from /Applications/blender-2.79.app/Contents/Resources/
-#      2.79/python/lib/python3.5/site-packages/matplotlib/backends
-# Unfortunately that backend isn't in Blender
-##matplotlib.use('Tkagg')
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-cwd = bpy.path.abspath("//")  # TODO: fix abspath("//") for import siunits
+cwd = bpy.path.abspath("//")
 sys.path.append(cwd)
 print(f"{cwd=}")
 if 'siunits' in sys.modules:
-    print("reloading module siunits")
+    ##print("reloading module siunits")
     del sys.modules['siunits']
 import siunits as si
 
@@ -462,8 +457,6 @@ class MeshMatBlock(MatBlock):
             print("MeshMatBlock.sendDef_G", ob.name, "start")
         
         # need the snap layer active for Dynamic Paint
-        # snapLayerSave = scn.layers[layerSnap]
-        # scn.layers[layerSnap] = 1
         snapc = collSnap.get()
         snapHideSave = snapc.hide_viewport
         snapc.hide_viewport = False
@@ -530,8 +523,6 @@ class MeshMatBlock(MatBlock):
             so.hide_viewport = False
             collPlane.get().objects.link(so)
             scn.collection.objects.unlink(so)
-            # why?
-            ##bpy.ops.object.transform_apply(scale=True)
 
             # set up a linear Z-slicing path for canvas through object
             try:
@@ -994,21 +985,11 @@ class Figure:
         print("creating Figure", Figure.num)
         self.figure = plt.figure(Figure.num, figsize=(4.7, 4))
         self.figure.clear()
-        ##win = plt.get_current_fig_manager().window
-        ##m = re.match(r"(\d+)x(\d+)\+(\d+)\+(\d+)", win.geometry())
-        ##dx, dy, x, y = [x for x in m.groups()]
-        ##if not Figure.winx is None:
-        ##    x = Figure.winx + 10
-        ##    y = Figure.winy + 10
-        ##    win.geometry(f"{dx}x{dy}+{x}+{y}")
-        ##Figure.winx = x
-        ##Figure.winy = y
         Figure.num += 1
         self.ax = plt.axes()
         self.max_x = 0.
         self.min_y = 9999999.
         self.max_y = -9999999.
-        ##self.units_y = 'V'
         self.ylabel = ""
 
 #==============================================================================
@@ -1038,8 +1019,6 @@ class Probe(Block):
                     "Probe measured value"),
         "p_value3": bp.FloatVectorProperty(description=
                     "Probe measured vector value"),
-        ##"p_inColor": bp.BoolProperty(description=
-        ##            "Display is in color", default=True),
         "p_dispScale": bp.FloatProperty(min=0, default=256., description=
                     "Display scale"),
         "p_pixelRep": bp.IntProperty(min=1, default=1, description=
@@ -1158,7 +1137,6 @@ class Probe(Block):
             layout.prop_search(ob, 'p_axis', scene, 'p_axes', text="Axis")
             layout.prop_search(ob, 'p_field', scene, fields, text="Field")
             row = layout.row()
-            ##row.prop(ob, 'p_inColor', text="In color")
             row.prop(ob, 'p_dispScale', text="Brightness")
             row.prop(ob, 'p_pixelRep', text="Repeat")
             row = layout.row()
@@ -1215,9 +1193,6 @@ class Probe(Block):
                 apix = apix.reshape((niy,nix,4))
                 ##print(f"setPlaneTex: {rep=}, {nix=}, {niy=}")
                 apix = apix.repeat(rep, axis=0).repeat(rep, axis=1)
-            ##if ob.p_verbose > 1:
-            ##    print("apix=", apix.shape, apix.dtype)
-            ##    print(apix)
             img.pixels = apix.reshape(-1)
         else:
             print(f"probe.P: image size mismatch: {img.name} "
@@ -1444,11 +1419,7 @@ class Probe(Block):
                 if ob.p_verbose > 1:
                     print(ob.name, "D2=", fv(D2), "Is=", Is)
 
-                # this delete is too dangerous
-                ##op = bpy.ops.object
-                ##op.select_by_layer(layers=layer+1) # layers 1-20
-                ##op.delete()
-                # instead we delete just probe's arrow-children
+                # delete just probe's arrow-children
                 for arrow in ob.children:
                     objs.remove(arrow, do_unlink=True)
 
@@ -1685,14 +1656,6 @@ class Probe(Block):
                     print(f"=({V.x:.4g},{V.y:.4g},{V.z:.4g}) {units}")
                 else:
                     print(f".{ob.p_axis}={vbase:.4g}{units}")
-                ##if ob.p_field == 'Voltage':
-                ##    print(f" d={self.dist:5.2}mm v={v:9.4}V")
-                ##else:
-                ##    print()
-            ##if sim.state < PAUSED:
-                ### not paused (why only not-paused???)
-                ##data = v
-                ##print("Point: data=v=", data)
             data = v
 
         elif ob.p_shape == 'Line':
@@ -1914,10 +1877,6 @@ class Probe(Block):
             else:
                 units_x = ''
             if scale_y is not None:
-                ##print(f"Scaling plot Y axis by {10**scale_y:g} ({units_y})")
-                ##ticks_y = ticker.FuncFormatter(lambda y,
-                ##                pos: '{0:g}'.format(y/10**scale_y))
-                ##fig.ax.yaxis.set_major_formatter(ticks_y)
                 fig.ax.yaxis.set_major_formatter(NFmtr(scale_y))
             else:
                 units_y = ''
@@ -1960,8 +1919,6 @@ class Sim:
         sims[context.scene] = self
         bpy.app.driver_namespace['fields'] = sims
 
-        ##self.fieldsOb = ob = getFieldsOb(context)
-        ##bpy.context.scene.layers[layerSnap] = 0
         obs = [ob for ob in context.visible_objects
           if ob.name.startswith("0Fields")]
         if len(obs) != 1:
@@ -2063,18 +2020,15 @@ class Sim:
             alpha = m.diffuse_color[3]
             if alpha < 1:
                 m.use_nodes = True
-                print(f"{m.name}: setting alpha to {alpha}")
-                m.node_tree.nodes["Principled BSDF"
-                    ].inputs[0].default_value = m.diffuse_color
-                m.node_tree.nodes["Principled BSDF"
-                    ].inputs['Alpha'].default_value = alpha
+                ##print(f"{m.name}: setting alpha to {alpha}")
+                node = m.node_tree.nodes["Principled BSDF"]
+                node.inputs[0].default_value = m.diffuse_color
+                node.inputs['Alpha'].default_value = alpha
                 m.blend_method = 'BLEND'
 
         # get simulation area dimensions from parent Fields object
         scn = bpy.context.scene
         ob = self.fieldsOb
-        # for k in [p[1]['name'] for p in FieldsBlock.props]:
-        #     setattr(self, k, getattr(ob, k))
         for key, value in FieldsBlock.props.items():
             setattr(self, key, getattr(ob, key))
         self.nx = ma.floor(ob.dimensions.x/ob.dx)
@@ -2330,9 +2284,6 @@ class Sim:
                 status += '  STOPPED'
         blf.draw(font_id, status)
  
-        ##except:       # !!! which error to ignore? not all of them!
-        ##    pass
-
         # draw mobile-probe measurement value next to mouse pointer
         mpos = self.mouse_pos
         ob = bpy.context.object
@@ -2758,17 +2709,11 @@ class FieldMatPanel(bpy.types.Panel):
 
     @classmethod
     def createTypes(cls):
-        # for prop in cls.props:
-        #     setattr(bpy.types.Material, prop[1]['name'], prop)
-        ##print(f"FMP.createTypes: .__annotations__={cls.__annotations__}")
         for key, value in cls.__annotations__.items():
-            ##print(f"FMP.createTypes: {key}={value}")
             setattr(bpy.types.Material, key, value)
 
     @classmethod
     def delTypes(cls):
-        # for prop in cls.props:
-        #     delattr(bpy.types.Material, prop[1]['name'])
         for key in cls.props.keys():
             delattr(bpy.types.Material, key)
 
@@ -2816,7 +2761,6 @@ operatorsPanels = (
 )
 
 def register():
-    ##bpy.utils.register_module(__name__)
     for c in operatorsPanels:
         bpy.utils.register_class(c)
 
@@ -2838,13 +2782,11 @@ def register():
     bpy.app.handlers.depsgraph_update_pre.append(populateTypes)
 
     for cls in blockClasses.values():
-        ##print(f"creating types for {cls.__name__}:")
         cls.createTypes()
     FieldMatPanel.createTypes()
 
 def unregister():
     print("unregister:")
-    ##bpy.utils.unregister_module(__name__)
     for c in classes:
        bpy.utils.unregister_class(c)
     for km in addon_keymaps:
@@ -2862,4 +2804,3 @@ def unregister():
 
 if __name__ == "__main__":
     register()
-    ##getFieldsOb(bpy.context, create=False)

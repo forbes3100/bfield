@@ -13,8 +13,6 @@
 
 230129: Set up Meep output comparison on Linux.
 
-230201: bfield.py: fix abspath("//") for import siunits.
-
 230203: bfield.py: make onScreenInit work from "Run FDTD" button too.
 
 230203: bfield.py: Track down why opkey-P doesn't work on Linux.
