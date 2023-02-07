@@ -67,6 +67,8 @@ mm = 0.001      # m/mm
 
 timeUnits = {'sec': 1., 'ms': 1e-3, 'us': 1e-6, 'ns': 1e-9, 'ps': 1e-12,
              'fs': 1e-15}
+resUnits = {'ohms': 1., 'K': 1e3, 'M': 1e6}
+capUnits = {'uf': 1e-6, 'nf': 1e-9, 'pf': 1e-12}
 
 # Name of layer collection, of which there must be exactly one of
 # each visible. Will be created if needed.
@@ -418,6 +420,25 @@ class MatBlock(Block):
                       f"{Bs.y:g} {Be.y:g} {Bs.z:g} {Be.z:g}\n")
         yield
 
+    def assertMaterial(self, ob, type, value, color):
+        """Assert that component ob of given type has a material with a
+        name matching package-value. Also assigns the color if created.
+        Returns the material.
+        """
+        m = ob.active_material
+        if m is None:
+            pkg = ob.data.name[:5]
+            mname = f"{pkg}-{value}"
+            m = bpy.data.materials.get(mname)
+            if m is None:
+                m = bpy.data.materials.new(name=mname)
+                m.diffuse_color = color
+                print(f"{ob.name}: created {type} material {m.name}")
+            ob.material_slots[0].material = m
+            ob.material_slots[0].link = 'OBJECT'
+        print(f"{ob.name}: {type} material {m.name}")
+        return m
+
 
 #==============================================================================
 # A volume of material in the sim world.
@@ -679,21 +700,24 @@ class FieldsBlock(MatBlock):
             print(cmd)
         self.sim.send(cmd)
 
-
 #==============================================================================
 # A block of resistive material. Creates the material if needed.
 
 class Resistor(MatBlock):
     props = {
-             "resistance": bp.FloatProperty(description="Resistance, ohms",
+             "resistance": bp.FloatProperty(description="Resistance",
                                             min=0., default=1.),
+             "resUnits": bp.StringProperty(description="units for resistance",
+                                           default='ohms'),
              "axis": bp.StringProperty(description="axis of resistance (X/Y/Z)",
                                        default='X'),
     }
 
     @classmethod
     def drawProps(self, ob, layout, scene):
-        layout.prop(ob, 'resistance', text="Resistance (ohms)")
+        split = layout.split(factor=0.6)
+        split.row().prop(ob, 'resistance')
+        split.prop_search(ob, 'resUnits', scene, 'resUnits', text="")
         layout.prop_search(ob, 'axis', scene, 's_axes', text="Axis")
         layout.prop(ob, 'verbose', text="Verbosity")
 
@@ -702,11 +726,11 @@ class Resistor(MatBlock):
         ##print("Resistor.prepare_G", ob.name, ob.axis)
         for _ in super().prepare_G():
             yield
-        R = ob.resistance
+        R = ob.resistance * resUnits[ob.resUnits]
         sige = 1. / R
         N = self.Be - self.Bs
         if N.x < 0 or N.y < 0 or N.z < 0:
-            print(f"*** Resistor {ob.name} rotated?")
+            print(f"**** Resistor {ob.name} rotated")
             return
         axis = ob.axis[-1]
         if axis == 'X':
@@ -717,15 +741,12 @@ class Resistor(MatBlock):
             sige = sige * N.z / (N.x * N.y)
         sige = sige / mm
 
-        m = ob.active_material
-        ##print(f"{R=} N=({N.x:3f},{N.y:3f},{N.z:3f}): sige={sige:g}, {m=}")
-        if m is None:
-            m = bpy.data.materials.new(name=f"Carbon-{ob.name}")
-            print("Created resistor material")
+        value = f"{ob.resistance:g}{ob.resUnits}"
+        color = (0.025, 0.025, 0.025, 1.)
+        m = self.assertMaterial(ob, "resistor", value, color)
         m.mur = 1.0
         m.epr = 1.0
         m.sige = sige
-        print("material:", m.name)
 
     def sendDef_G(self):
         ob = self.ob
@@ -741,15 +762,19 @@ class Resistor(MatBlock):
 
 class Capacitor(MatBlock):
     props = {
-             "capacitance": bp.FloatProperty(description="Capacitance, farads",
+             "capacitance": bp.FloatProperty(description="Capacitance",
                                              min=0., default=1.),
+             "capUnits": bp.StringProperty(description="units for capacitance",
+                                           default='pf'),
              "axis": bp.StringProperty(description="axis of capacitor (X/Y/Z)",
                                        default='X'),
     }
 
     @classmethod
     def drawProps(self, ob, layout, scene):
-        layout.prop(ob, 'capacitance', text="Capacitance (farads)")
+        split = layout.split(factor=0.6)
+        split.row().prop(ob, 'capacitance')
+        split.prop_search(ob, 'capUnits', scene, 'capUnits', text="")
         layout.prop_search(ob, 'axis', scene, 's_axes', text="Axis")
         layout.prop(ob, 'verbose', text="Verbosity")
 
@@ -758,10 +783,10 @@ class Capacitor(MatBlock):
         ##print("Capacitor.prepare_G", ob.name, ob.axis)
         for _ in super().prepare_G():
             yield
-        C = ob.capacitance
+        C = ob.capacitance * capUnits[ob.capUnits]
         N = self.Be - self.Bs
         if N.x < 0 or N.y < 0 or N.z < 0:
-            print(f"*** Capacitor {ob.name} rotated?")
+            print(f"**** Capacitor {ob.name} rotated")
             return
         axis = ob.axis[-1]
         # epr = d/(C*A)
@@ -774,15 +799,12 @@ class Capacitor(MatBlock):
             epr = rC * N.z / (N.x * N.y)
         epr = epr / mm
 
-        m = ob.active_material
-        ##print(f"{C=} N=({N.x:3f},{N.y:3f},{N.z:3f}): epr={epr:g}, {m=}")
-        if m is None:
-            m = bpy.data.materials.new(name=f"Cap-{ob.name}")
-            print("Created capacitor material")
+        value = f"{ob.capacitance:g}{ob.capUnits}"
+        color = (0.81, 0.75, 0.59, 1.)
+        m = self.assertMaterial(ob, "capacitor", value, color)
         m.mur = 1.0
         m.epr = epr
         m.sige = 0.0
-        print("material:", m.name)
 
     def sendDef_G(self):
         ob = self.ob
@@ -858,6 +880,10 @@ class Source(Block):
                                             type=bpy.types.PropertyGroup)
         bpy.types.Scene.timeUnits = bp.CollectionProperty(
                                             type=bpy.types.PropertyGroup)
+        bpy.types.Scene.resUnits = bp.CollectionProperty(
+                                            type=bpy.types.PropertyGroup)
+        bpy.types.Scene.capUnits = bp.CollectionProperty(
+                                            type=bpy.types.PropertyGroup)
 
     @classmethod
     def unregisterTypes(self):
@@ -865,6 +891,8 @@ class Source(Block):
         del bpy.types.Scene.s_axes
         del bpy.types.Scene.s_functions
         del bpy.types.Scene.timeUnits
+        del bpy.types.Scene.resUnits
+        del bpy.types.Scene.capUnits
 
     @classmethod
     def populateTypes(self, scene):
@@ -880,6 +908,12 @@ class Source(Block):
         scene.timeUnits.clear()
         for k in timeUnits.keys():
             scene.timeUnits.add().name = k
+        scene.resUnits.clear()
+        for k in resUnits.keys():
+            scene.resUnits.add().name = k
+        scene.capUnits.clear()
+        for k in capUnits.keys():
+            scene.capUnits.add().name = k
 
     @classmethod
     def drawProps(self, ob, layout, scene):
@@ -1297,7 +1331,7 @@ class Probe(Block):
             if len(mesh.materials) == 1:
                 mat = mesh.materials[0]
                 if mat and mat.use_nodes:
-                    print(f"prepare_G found mat {repr(mat)}")
+                    ##print(f"Probe.prepare_G found mat {repr(mat)}")
                     tex = mat.node_tree.nodes.get('Image Texture')
                     if tex:
                         img = tex.image
@@ -2125,6 +2159,12 @@ class Sim:
                 return block
         return None
 
+    def sendFMaterial(self, ob, m):
+        self.fmats.append(m)
+        if ob.verbose > 1:
+            print(" adding fmat", m.name)
+        self.send(f"M {m.name} {m.mur:g} {m.epr:g} {m.sige:g} 0\n")
+
     #--------------------------------------------------------------------------
 
     def sendDefs_G(self):
@@ -2153,10 +2193,7 @@ class Sim:
                     m = ob.material_slots[0].material
 
             if m and not m in fmats:
-                fmats.append(m)
-                if ob.verbose > 1:
-                    print(" adding fmat", m.name)
-                self.send(f"M {m.name} {m.mur:g} {m.epr:g} {m.sige:g} 0\n")
+                self.sendFMaterial(ob, m)
 
         # send general sim parameters to server
         for _ in self.fieldsBlock.sendSimDef_G():
