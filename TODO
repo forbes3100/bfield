@@ -3,11 +3,6 @@
 190613: Update field_server_eqns.odt sections 6 and 7 (Update Coefficients,
          Step), in the same manner as section 5 (InitPMLarea).
 
-230126: Fix "CustomData_blend_write error: layer '':15 - can't be written to
-         file" upon file save (only in bfield_test.blend?).
-
-230127: Add scene-to-python export and import, for scene source control.
-
 230129: Set up Meep output comparison on Linux.
 
 230203: bfield.py: make onScreenInit work from "Run FDTD" button too.
