@@ -68,7 +68,7 @@ capUnits = {'uf': 1e-6, 'nf': 1e-9, 'pf': 1e-12}
 # Name of layer collection, of which there must be exactly one of
 # each visible. Will be created if needed.
 
-class StandardCollection(object):
+class StandardCollection:
 
     def __init__(self, baseName):
         self.baseName = baseName
@@ -1233,7 +1233,7 @@ class Probe(Block):
         sfactor = ob.p_sfactor
         dx = sim.dx
         self.lastStep = -1
-        if ob.p_verbose > 1:
+        if ob.p_verbose > 0:
             print(f"Probe.prepare_G for {ob.name}: {dx=} {sfactor=}")
 
         # get untrimmed probe dimensions
@@ -1250,14 +1250,14 @@ class Probe(Block):
         B1l, B1u = fover
         Is = IGrid(B1l-Bsf, dx)
         ##print("Probe: ob=", ob.name, "ob.p_verbose=", ob.p_verbose)
-        if ob.p_verbose > 1:
+        if ob.p_verbose > 0:
             print("B1l.x=", B1l.x, "Bsf.x=", Bsf.x, "dx=", dx)
         Ie = IGrid(B1u-Bsf, dx)
         nx = max(Ie.i - Is.i, 1)
         ny = max(Ie.j - Is.j, 1)
         ##print("ny:", Ie.j, Is.j, ny)
         nz = max(Ie.k - Is.k, 1)
-        if ob.p_verbose > 1:
+        if ob.p_verbose > 0:
             print(ob.name, "Bsf=", fv(Bsf), "Is=", Is, "Ie=", Ie)
             print(" nx,ny,nz=", nx, ny, nz)
         self.N = IVector(nx,ny,nz)
@@ -1291,7 +1291,7 @@ class Probe(Block):
             elif ny == 1:
                 niy = nz
             n = nix * niy
-            if ob.p_verbose > 1:
+            if ob.p_verbose > 0:
                 print(f"probe.plane {nix}x{niy}, total size = {n} elements")
             if n < 1 or n > 80000:
                 raise ValueError(f"probe.plane: bad requested data size: {n}")
@@ -1365,7 +1365,7 @@ class Probe(Block):
             uvmap = mesh.uv_layers.active
             ud = uvmap.data
 
-            if ob.p_verbose > 1:
+            if ob.p_verbose > 0:
                 print("nx,ny,nz=", nx,ny,nz)
             if nx == 1: # project onto X-axis view
                 ##print("assigning X-axis UV map", uvmap.name)
@@ -1540,7 +1540,7 @@ class Probe(Block):
         # send probe request to server
         s = sim.s
         cmd = f"Q {ob.name}"
-        if ob.p_verbose:
+        if ob.p_verbose > 2:
             print("getDataFromServer:", ob.name, f"cmd='{cmd}'")
         ack = sim.send(cmd, 5)
         if len(ack) < 1 or ack[0] != ord('A'):

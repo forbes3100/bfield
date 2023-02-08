@@ -3,11 +3,8 @@
 190613: Update field_server_eqns.odt sections 6 and 7 (Update Coefficients,
          Step), in the same manner as section 5 (InitPMLarea).
 
-190614: Fix (or at least warn) case where Fields object size or location is
-         off-grid, which causes Probe.Vol int-size errors, impedance errors.
-
 230126: Fix "CustomData_blend_write error: layer '':15 - can't be written to
-         file" upon file save.
+         file" upon file save (only in bfield_test.blend?).
 
 230127: Add scene-to-python export and import, for scene source control.
 
@@ -16,8 +13,6 @@
 230203: bfield.py: make onScreenInit work from "Run FDTD" button too.
 
 230203: Track down random "No C.space_data" with dynProbe, and random 0 values.
-
-230204: Fix plane probe image rotation in some cases.
 
 230205: server: fix crash in stopSim() if 0Fields object changed?
 
