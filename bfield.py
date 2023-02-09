@@ -429,6 +429,8 @@ class MatBlock(Block):
                 m = bpy.data.materials.new(name=mname)
                 m.diffuse_color = color
                 print(f"{ob.name}: created {type} material {m.name}")
+            if len(ob.material_slots) == 0:
+                ob.data.materials.append(m)
             ob.material_slots[0].material = m
             ob.material_slots[0].link = 'OBJECT'
         print(f"{ob.name}: {type} material {m.name}")
@@ -2004,31 +2006,48 @@ class Sim:
 
     #--------------------------------------------------------------------------
 
-    def getMaterialsAndDims(self):
+    def newMaterial(self, name, value, alpha=None):
+        """Create a material if it doesn't exist, given its name,
+        (color, mur, epr, sige), and transparency."""
         bmats = bpy.data.materials
+        m = bmats.get(name)
+        if m is None:
+            m = bmats.new(name=name)
+        (m.diffuse_color, m['mur'], m['epr'], m['sige']) = value
+        m.use_fake_user = True
+        if alpha is None:
+            alpha = m.diffuse_color[3]
+        if alpha < 0.99:
+            m.use_nodes = True
+            ##print(f"{m.name}: setting alpha to {alpha}")
+            node = m.node_tree.nodes["Principled BSDF"]
+            node.inputs[0].default_value = m.diffuse_color
+            node.inputs['Alpha'].default_value = alpha
+            m.blend_method = 'BLEND'
+
+    def getMaterialsAndDims(self):
+        # material name, color [R,G,B,A]       mur, epr, sige
         mats = {
             'FieldE':   ((0, 0, 1, 1.),          0, 0, 0),
             'FieldH':   ((1, 0, 0, 1.),          0, 0, 0),
             'FieldM':   ((0, 1, 0, 1.),          0, 0, 0),
             'FieldJ':   ((0, 1, 1, 1.),          0, 0, 0),
             'Air':      ((0.5, 0.5, 1, 0.1),     1., 1., 0.),
-            'Copper':   ((0.45, 0.14, .06, 1.),  1., 1., 9.8e7),
-            'Copper-T': ((0.45, 0.15, .06, 0.3), 1., 1., 9.8e7),
         }
-        for k,v in mats.items():
-            m = bmats.get(k)
-            if m is None:
-                m = bmats.new(name=k)
-            (m.diffuse_color, m['mur'], m['epr'], m['sige']) = v
-            m.use_fake_user = True
-            alpha = m.diffuse_color[3]
-            if alpha < 0.99:
-                m.use_nodes = True
-                ##print(f"{m.name}: setting alpha to {alpha}")
-                node = m.node_tree.nodes["Principled BSDF"]
-                node.inputs[0].default_value = m.diffuse_color
-                node.inputs['Alpha'].default_value = alpha
-                m.blend_method = 'BLEND'
+        matsT = {
+            'Copper':   ((0.45, 0.14, .06, 1.),  1., 1., 9.8e7),
+            'CopperTinned': ((0.42, 0.42, .42, 1.),  1., 1., 9.8e7),
+            'Solder':   ((0.42, 0.42, .42, 1.),  1., 1., 1.5e7),
+            'Brass':    ((0.45, 0.30, .03, 1.),  1., 1., 7e7),
+            'Teflon':   ((0.99, 0.80, .78, 1.),  1., 2.1, 0.),
+            'Epoxy':    ((0.05, 0.05, .05, 1.),  1., 2.7, 0.),
+            'FR4':      ((0.73, 0.80, .39, 1.),  1., 4.4, 0.),
+        }
+        for name, value in mats.items():
+            self.newMaterial(name, value)
+        for name, value in matsT.items():
+            self.newMaterial(name, value, 1.)
+            self.newMaterial(f"{name}-T", value, 0.3)
 
         # get simulation area dimensions from parent Fields object
         scn = bpy.context.scene
