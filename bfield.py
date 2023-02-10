@@ -58,6 +58,7 @@ timeout = 2500 # sec, server communication
 
 c0 = 2.998e8    # m/s speed of light
 z0 = 376.73     # ohms free space impedance
+e0 = 8.854e-12  # F/m free space permittivity
 mm = 0.001      # m/mm
 
 timeUnits = {'sec': 1., 'ms': 1e-3, 'us': 1e-6, 'ns': 1e-9, 'ps': 1e-12,
@@ -176,9 +177,24 @@ def bounds(ob):
     if ob.scale != Vector((1., 1., 1.)):
         print(f"**** Object {ob.name} needs Apply Scale!")
 
+    modsTurnedOff = []
+    for mod in ob.modifiers:
+        if mod.type == 'ARRAY':
+            ##print(f" temp turning off {ob.name} array {mod.name}")
+            modsTurnedOff.append(mod.name)
+            mod.show_viewport = False
+    if len(modsTurnedOff) > 0:
+        bpy.context.view_layer.update()
+
     bb = ob.bound_box
     Bs = ob.matrix_world @ Vector(bb[0])
     Be = ob.matrix_world @ Vector(bb[6])
+
+    if len(modsTurnedOff) > 0:
+        for name in modsTurnedOff:
+            ob.modifiers[name].show_viewport = True
+        bpy.context.view_layer.update()
+
     return Bs, Be
 
 # Return a (Bs, Be) bound box trimmed to both objects, or None.
@@ -411,8 +427,57 @@ class MatBlock(Block):
         Bs, Be = self.Bs, self.Be
         mat = self.getFieldMat()
         mtype = self.mtypeCodes[ob['blockType']]
-        self.sim.send(f"B{mtype} {ob.name} {mat.name} {Bs.x:g} {Be.x:g} "
-                      f"{Bs.y:g} {Be.y:g} {Bs.z:g} {Be.z:g}\n")
+
+        # if any array modifiers used, start with 0 index
+        name = ob.name
+        for mod in ob.modifiers:
+            if mod.type == 'ARRAY':
+                name = f"{ob.name}[000]"
+
+        # send (first) block object's definition to simulator
+        cmd = (f"B{mtype} {name} {mat.name} {Bs.x:g} "
+            f"{Be.x:g} {Bs.y:g} {Be.y:g} {Bs.z:g} {Be.z:g}\n")
+        self.sim.send(cmd)
+        if ob.verbose > 0:
+            print(cmd, end='')
+        selection = [(Bs, Be)]
+        arrayi = 1
+
+        # handle any modifiers: arrays will send rest of objects, each
+        # array sending copies of all the previous ones (in selection)
+        for mod in ob.modifiers:
+            t = mod.type
+            if t not in ('BOOLEAN',):
+                if t == 'ARRAY':
+                    if ob.verbose > 0:
+                        print(f" {ob.name} array modifier, {mod.count=}")
+                    if not (mod.use_constant_offset and not
+                         (mod.use_object_offset or
+                          mod.use_relative_offset or
+                          mod.use_merge_vertices)):
+                        print(f"**** {ob.name} array offsets not constant")
+                    offset = mod.constant_offset_displace
+                    newSelection = []
+                    for i in range(1, mod.count):
+                        for Bs, Be in selection:
+                            nameo = f"{ob.name}[{arrayi:03}]"
+                            Bso = Bs + i*offset
+                            Beo = Be + i*offset
+                            if ob.verbose > 0:
+                                print(f" {mod.name} {i} ", end='')
+                            cmd = (f"B{mtype} {nameo} {mat.name} "
+                                f"{Bso.x:g} {Beo.x:g} {Bso.y:g} "
+                                f"{Beo.y:g} {Bso.z:g} {Beo.z:g}\n")
+                            self.sim.send(cmd)
+                            if ob.verbose > 0:
+                                print(cmd, end='')
+                            newSelection.append((Bso, Beo))
+                            arrayi += 1
+                    selection.extend(newSelection)
+
+                else:
+                    print(f"**** {ob.name} needs Apply {t} Modifier!")
+
         yield
 
     def assertMaterial(self, ob, type, value, color):
@@ -516,6 +581,10 @@ class MeshMatBlock(MatBlock):
                 bpy.ops.dpaint.type_toggle(type='BRUSH')
 
             # put canvas plane in X,Y center of object
+            planeName = collPlane.name()
+            vl = bpy.context.view_layer
+            lc = vl.layer_collection.children[planeName]
+            vl.active_layer_collection = lc
             bpy.ops.mesh.primitive_plane_add()
             so = bpy.context.object
             print(f"canvas plane for {ob.name} is {so.name}, "
@@ -523,8 +592,6 @@ class MeshMatBlock(MatBlock):
             snapc.objects.link(so)
             so.scale = (r, r, 1)
             so.hide_viewport = False
-            collPlane.get().objects.link(so)
-            scn.collection.objects.unlink(so)
 
             # set up a linear Z-slicing path for canvas through object
             try:
@@ -782,21 +849,22 @@ class Capacitor(MatBlock):
             print(f"**** Capacitor {ob.name} rotated")
             return
         axis = ob.axis[-1]
-        # epr = d/(C*A)
-        rC = 1 / C
+        # C = (e0*epr)*(A/d)
+        # epr = C*(d/A)/e0
+        # d/A is in 1/meter
+        # d/A = r / mm
         if axis == 'X':
-            epr = rC * N.x / (N.y * N.z)
+            r = N.x / (N.y * N.z)
         elif axis == 'Y':
-            epr = rC * N.y / (N.x * N.z)
+            r = N.y / (N.x * N.z)
         elif axis == 'Z':
-            epr = rC * N.z / (N.x * N.y)
-        epr = epr / mm
+            r = N.z / (N.x * N.y)
 
         value = f"{ob.capacitance:g}{ob.capUnits}"
         color = (0.81, 0.75, 0.59, 1.)
         m = self.assertMaterial(ob, "capacitor", value, color)
         m.mur = 1.0
-        m.epr = epr
+        m.epr = C * r / (mm * e0)
         m.sige = 0.0
 
     def sendDef_G(self):
@@ -2036,12 +2104,21 @@ class Sim:
         }
         matsT = {
             'Copper':   ((0.45, 0.14, .06, 1.),  1., 1., 9.8e7),
+            'CopperLC': ((0.45, 0.14, .06, 1.),  1., 1., 5.8e7),  # LC
+            'Metal':    ((0.45, 0.14, .06, 1.),  1., 1., 3.27e7), # LC
             'CopperTinned': ((0.42, 0.42, .42, 1.),  1., 1., 9.8e7),
             'Solder':   ((0.42, 0.42, .42, 1.),  1., 1., 1.5e7),
+            'SolderLC': ((0.42, 0.42, .42, 1.),  1., 1., 7e6),    # LC
             'Brass':    ((0.45, 0.30, .03, 1.),  1., 1., 7e7),
-            'Teflon':   ((0.99, 0.80, .78, 1.),  1., 2.1, 0.),
+            'BrassLC':  ((0.45, 0.30, .03, 1.),  1., 1., 1.5e7),  # LC
+            'Teflon':   ((0.99, 0.80, .78, 1.),  1., 2.8, 0.),    # LC
             'Epoxy':    ((0.05, 0.05, .05, 1.),  1., 2.7, 0.),
             'FR4':      ((0.73, 0.80, .39, 1.),  1., 4.4, 0.),
+            'Ceramic':  ((0.81, 0.75, .60, 1.),  1., 38., 0.),
+            'Porcelain': ((0.81, 0.75, .60, 1.), 1., 5., 1e-13),  # LC
+            'Ferrite':  ((0.81, 0.75, .60, 1.), 1000., 1., 0.01),
+            'Iron':     ((0.81, 0.75, .60, 1.), 3800., 1., 1e6),
+            'Cast Iron': ((0.81, 0.75, .60, 1.), 60., 1., 0.),    # LC
         }
         for name, value in mats.items():
             self.newMaterial(name, value)
