@@ -837,17 +837,18 @@ class Resistor(MatBlock):
             yield
         R = ob.resistance * res_units[ob.res_units]
         sige = 1.0 / R
-        N = self.Be - self.Bs
-        if N.x < 0 or N.y < 0 or N.z < 0:
+        # block dimensions [mm]
+        D = self.Be - self.Bs
+        if D.x < 0 or D.y < 0 or D.z < 0:
             print(f"**** Resistor {ob.name} rotated")
             return
         axis = ob.axis[-1]
         if axis == 'X':
-            sige = sige * N.x / (N.y * N.z)
+            sige = sige * D.x / (D.y * D.z)
         elif axis == 'Y':
-            sige = sige * N.y / (N.x * N.z)
+            sige = sige * D.y / (D.x * D.z)
         elif axis == 'Z':
-            sige = sige * N.z / (N.x * N.y)
+            sige = sige * D.z / (D.x * D.y)
         sige = sige / mm
 
         value = f"{ob.resistance:g}{ob.res_units}"
@@ -896,8 +897,9 @@ class Capacitor(MatBlock):
         for _ in super().prepare_gen():
             yield
         C = ob.capacitance * cap_units[ob.cap_units]
-        N = self.Be - self.Bs
-        if N.x < 0 or N.y < 0 or N.z < 0:
+        # block dimensions [mm]
+        D = self.Be - self.Bs
+        if D.x < 0 or D.y < 0 or D.z < 0:
             print(f"**** Capacitor {ob.name} rotated")
             return
         axis = ob.axis[-1]
@@ -906,11 +908,11 @@ class Capacitor(MatBlock):
         # d/A is in 1/meter
         # d/A = r / mm
         if axis == 'X':
-            r = N.x / (N.y * N.z)
+            r = D.x / (D.y * D.z)
         elif axis == 'Y':
-            r = N.y / (N.x * N.z)
+            r = D.y / (D.x * D.z)
         elif axis == 'Z':
-            r = N.z / (N.x * N.y)
+            r = D.z / (D.x * D.y)
 
         value = f"{ob.capacitance:g}{ob.cap_units}"
         color = (0.81, 0.75, 0.59, 1.0)
@@ -1432,7 +1434,7 @@ class Probe(Block):
         dx = sim.dx
         self.last_step = -1
         if ob.p_verbose > 0:
-            print(f"Probe.prepare_gen for {ob.name}: {dx=} {sfactor=}")
+            print(f"Probe.prepare_gen for {ob.name}: {dx=:3} {sfactor=}")
 
         # get untrimmed probe dimensions
         B0l, B0u = self.Bs, self.Be
@@ -1785,7 +1787,7 @@ class Probe(Block):
         cmd = f"Q {ob.name}"
         if ob.p_verbose > 2:
             print("get_data_from_server:", ob.name, f"cmd='{cmd}'")
-        ack = sim.send(cmd, 5)
+        ack = sim.send(cmd, 7)
         if len(ack) < 1 or ack[0] != ord('A'):
             ##print("non-A ack:", ack)
             if len(ack) == 1 and ack[0] == ord('D'):
@@ -1919,20 +1921,6 @@ class Probe(Block):
             # sum of H~ is z0*H, in V/m
             H = S / z0  # in A/m
             if ob.p_sum:
-                if ob.p_verbose:
-                    print(
-                        ob.name,
-                        "sum=",
-                        S,
-                        "count=",
-                        count,
-                        "\navg=",
-                        A,
-                        "area=",
-                        area,
-                        "H=",
-                        H,
-                    )
                 ob.p_value3 = H
                 data = (S, count, A, area, H)
                 ##self.drawChartStep(H)
@@ -2042,18 +2030,23 @@ class Probe(Block):
         if (ob.p_shape == 'Point' and self.history) or ob.p_shape == 'Line':
             if ob.p_shape == 'Point':
                 # add plot of point probe value history to the plot
-                items = list(self.history.items())
-                ##print("plot Point", ob.p_axis, type(items[0][1]))
-                if type(items[0][1]) == Vector:
+                # in separate arrays, otherwise numpy converts int keys to
+                # floats and argsort may fail to sort those properly
+                keys = list(self.history.keys())
+                values = list(self.history.values())
+                if type(values[0]) == Vector:
                     if ob.p_axis in 'ZYX':
                         ix = ob.p_axis - ord('X')
-                        ##print(f"plot Point V[{ix}]")
-                        items = [(t, V[ix]) for (t, V) in items]
+                        values = [V[ix] for V in values]
                     else:
-                        items = [(t, V.length) for (t, V) in items]
-                h = np.array(items)
-                xs, ys = h[h[:, 0].argsort()].T
-                xs *= sim.dt
+                        values = [V.length for V in values]
+                hk = np.array(keys)
+                hv = np.array(values)
+                # sort time keys, returning indices
+                hi = hk[:].argsort()
+                xs = hk[hi]
+                ys = hv[hi]
+                xs = xs.astype(np.double) * sim.dt
                 fig, color = self.get_plot_fig(1)
                 fig.xlabel = "Time"
                 fig.xunit = "s"
@@ -2079,18 +2072,6 @@ class Probe(Block):
                 fig.xunit = "m"
                 xs = np.linspace(s * mm, e * mm, self.n)
                 ##print("Line plot: s=", s, "e=", e, "xs=", xs)
-
-            if ob.p_verbose > 1:
-                print(
-                    "ys[-1]=",
-                    ys[-1],
-                    "xs[0]=",
-                    xs[0],
-                    "xs[-1]=",
-                    xs[-1],
-                    "dt=",
-                    sim.dt,
-                )
 
             marker = '.' if len(ys) < 50 else None
             label = ob.name
@@ -2475,6 +2456,9 @@ class Sim:
             if hasattr(block, 'do_step') and not block.ob.hide_viewport:
                 block.do_step()
             stop_ps = self.fields_ob.get('stop_ps', 0)
+            if stop_ps > 100000:
+                # sim sends a 6-digit step number back with each ack
+                print("**** Error: stop time limited to 100000 max.")
             current_ps = scn.frame_current * self.dt * 1e12
             ##print(f"{stop_ps=} {self.frame_no=} {self.dt=} {current_ps}")
             if stop_ps > 0 and current_ps > stop_ps:
@@ -2514,6 +2498,7 @@ class Sim:
         if self.active_ob:
             self.active_ob.select_set(True)
         self.dt = 0.5 * self.dx * mm / c0
+        print(f"dx = {self.dx:3f}, dt = {self.dt:5g}")
         try:
             self.send('R')
         except IOError:

@@ -165,16 +165,16 @@ void doCommand(int fd, char* text) {
             break;
 
         case 'Q':   // query probe data
-            char ack[6];
+            char ack[8];
             if (mode != IDLE) {
                 if (ai != 2)
                     throw new Err("probe Q cmd: expected name arg");
-                snprintf(ack, 6, "A%04d", osp->step);
-                _ = write(fd, ack, 5);
+                snprintf(ack, 8, "A%06d", osp->step);
+                _ = write(fd, ack, 7);
                 Probe::writeCells(fd, args[1]);
             } else {
-                snprintf(ack, 6, "D0000");
-                _ = write(fd, ack, 5);
+                snprintf(ack, 8, "D000000");
+                _ = write(fd, ack, 7);
             }
             break;
 
