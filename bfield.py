@@ -53,7 +53,7 @@ if 'siunits' in sys.modules:
     del sys.modules['siunits']
 import siunits as si
 
-isLinux = os.uname()[0] == 'Linux'
+is_linux = os.uname()[0] == 'Linux'
 
 timeout = 2500  # sec, server communication
 
@@ -62,7 +62,7 @@ z0 = 376.73  # ohms free space impedance
 e0 = 8.854e-12  # F/m free space permittivity
 mm = 0.001  # m/mm
 
-timeUnits = {
+time_units = {
     'sec': 1.0,
     'ms': 1e-3,
     'us': 1e-6,
@@ -70,49 +70,51 @@ timeUnits = {
     'ps': 1e-12,
     'fs': 1e-15,
 }
-resUnits = {'ohms': 1.0, 'K': 1e3, 'M': 1e6}
-capUnits = {'uf': 1e-6, 'nf': 1e-9, 'pf': 1e-12}
-
-# Name of layer collection, of which there must be exactly one of
-# each visible. Will be created if needed.
+res_units = {'ohms': 1.0, 'K': 1e3, 'M': 1e6}
+cap_units = {'uf': 1e-6, 'nf': 1e-9, 'pf': 1e-12}
 
 
 class StandardCollection:
-    def __init__(self, baseName):
-        self.baseName = baseName
+    """Name of layer collection
+
+    Must be exactly one of each visible. Will be created if needed.
+    """
+
+    def __init__(self, base_name):
+        self.base_name = base_name
         self._name = None
 
     def name(self):
         scene = bpy.context.scene
-        collNames = [
+        coll_names = [
             cn
             for cn in scene.collection.children.keys()
-            if cn.startswith(self.baseName)
+            if cn.startswith(self.base_name)
         ]
-        if self._name is None or not self._name in collNames:
-            if len(collNames) == 1:
-                self._name = collNames[0]
-            elif len(collNames) == 0:
-                c = bpy.data.collections.new(self.baseName)
+        if self._name is None or not self._name in coll_names:
+            if len(coll_names) == 1:
+                self._name = coll_names[0]
+            elif len(coll_names) == 0:
+                c = bpy.data.collections.new(self.base_name)
                 scene.collection.children.link(c)
                 self._name = c.name
             else:
                 raise RuntimeError(
-                    f"Expected a single {self.baseName} collection in scene."
-                    f" Found {collNames}"
+                    f"Expected a single {self.base_name} collection in scene."
+                    f" Found {coll_names}"
                 )
-        ##print(f"StandardCollection {self.baseName}: {self._name}")
+        ##print(f"StandardCollection {self.base_name}: {self._name}")
         return self._name
 
     def get(self):
         return bpy.data.collections[self.name()]
 
 
-collMain = StandardCollection("Main")
-collSnap = StandardCollection("Snap")
-collPlane = StandardCollection("Plane")
-collE = StandardCollection("E")
-collH = StandardCollection("H")
+coll_main = StandardCollection("Main")
+coll_snap = StandardCollection("Snap")
+coll_plane = StandardCollection("Plane")
+coll_E = StandardCollection("E")
+coll_H = StandardCollection("H")
 
 # sim states
 STOPPED = 0
@@ -121,17 +123,19 @@ RUNNING = 3
 PAUSED = 4
 
 sims = {}  # dictionary of FDTD simulations, indexed by scene
-fieldOperator = None
+field_operator = None
 
 
 def tu(ob, name):
-    return getattr(ob, name) * timeUnits[getattr(ob, name + 'Units')]
+    return getattr(ob, name) * time_units[getattr(ob, name + 'Units')]
 
 
-# 3D mouse position display. From users lemon, batFINGER at stackexchange.
+def get_mouse_3d(event):
+    """3D mouse position display
 
+    From users lemon, batFINGER at stackexchange.
+    """
 
-def getMouse3D(event):
     # get the mouse position thanks to the event
     mouse_pos = [event.mouse_region_x, event.mouse_region_y]
 
@@ -154,11 +158,8 @@ def getMouse3D(event):
         # the 3D location converted in object local coordinates
         ##loc = object.matrix_world.inverted() * loc
     else:
-        print(f"getMouse3D: {space_data=} {object=} {region=} {mouse_pos=}")
+        print(f"get_mouse_3d: {space_data=} {object=} {region=} {mouse_pos=}")
     return loc
-
-
-# ==============================================================================
 
 
 class IVector:
@@ -190,41 +191,39 @@ def gv(V):
     return f'({", ".join(["% 9.3g"]*len(V))})' % tuple(V)
 
 
-# Get an object's bounds box dimensions in global coordinates.
-
-
 def bounds(ob):
+    """Get an object's bounds box dimensions in global coordinates"""
+
     # bound_box only usable when unrotated & unscaled
     if ob.rotation_euler != Euler((0.0, 0.0, 0.0), 'XYZ'):
         print(f"**** Object {ob.name} needs Apply Rotation!")
     if ob.scale != Vector((1.0, 1.0, 1.0)):
         print(f"**** Object {ob.name} needs Apply Scale!")
 
-    modsTurnedOff = []
+    mods_off = []
     for mod in ob.modifiers:
         if mod.type == 'ARRAY':
             ##print(f" temp turning off {ob.name} array {mod.name}")
-            modsTurnedOff.append(mod.name)
+            mods_off.append(mod.name)
             mod.show_viewport = False
-    if len(modsTurnedOff) > 0:
+    if len(mods_off) > 0:
         bpy.context.view_layer.update()
 
     bb = ob.bound_box
     Bs = ob.matrix_world @ Vector(bb[0])
     Be = ob.matrix_world @ Vector(bb[6])
 
-    if len(modsTurnedOff) > 0:
-        for name in modsTurnedOff:
+    if len(mods_off) > 0:
+        for name in mods_off:
             ob.modifiers[name].show_viewport = True
         bpy.context.view_layer.update()
 
     return Bs, Be
 
 
-# Return a (Bs, Be) bound box trimmed to both objects, or None.
-
-
 def overlap(ob1, ob2, extend=0):
+    """Return a (Bs, Be) bound box trimmed to both objects, or None"""
+
     Ex = Vector((extend, extend, extend))
     B1l, B1h = bounds(ob1)
     B2l, B2h = bounds(ob2)
@@ -250,10 +249,7 @@ def overlap(ob1, ob2, extend=0):
     return (B1l, B1h)
 
 
-# ------------------------------------------------------------------------------
-
-
-def xcodeRun():
+def start_xcode():
     print("Telling XCode to run")
     ##scpt = 'tell application "XCode" to run active workspace document'
     scpt = """
@@ -272,10 +268,7 @@ def xcodeRun():
     print(p.returncode, stdout, stderr)
 
 
-# ------------------------------------------------------------------------------
-
-
-def getFieldsOb(context, create=True):
+def get_fields_ob(context, create=True):
     name = "0Fields"
     obs = [ob for ob in context.visible_objects if ob.name.startswith(name)]
     if len(obs) == 1:
@@ -295,8 +288,8 @@ def getFieldsOb(context, create=True):
 
         # put this object in the Main collection
         ##ob.layers = [i == layerMain for i in range(20)]
-        print(f"{name} to Main collection {collMain.name()}")
-        collMain.get().objects.link(ob)
+        print(f"{name} to Main collection {coll_main.name()}")
+        coll_main.get().objects.link(ob)
 
         ob.select_set(True)
     else:
@@ -304,15 +297,12 @@ def getFieldsOb(context, create=True):
     return ob
 
 
-# ==============================================================================
-
-
 class Block:
     props = {
         "snap": bp.BoolProperty(
             description="Snap bounds to sim grid", default=False
         ),
-        "snappedName": bp.StringProperty(
+        "snapped_name": bp.StringProperty(
             description="Name of snapped-to-sim-grid copy of this object"
         ),
     }
@@ -320,26 +310,24 @@ class Block:
     # cls.__annotations__ isn't used here because it's empty for subclasses
 
     @classmethod
-    def createTypes(cls):
-        ##print(f"Block.createTypes for {cls.__name__}: "
+    def create_types(cls):
+        ##print(f"Block.create_types for {cls.__name__}: "
         ##      f"adding {', '.join(cls.props.keys())}")
         for key, value in cls.props.items():
             setattr(bpy.types.Object, key, value)
 
     @classmethod
-    def delTypes(cls):
+    def del_types(cls):
         for key in cls.props.keys():
             delattr(bpy.types.Object, key)
 
-    def getFieldMat(self):
+    def get_field_mat(self):
         ob = self.ob
         slots = ob.material_slots
         mat = slots[0].material if slots else None
         if not (mat and mat in self.sim.fmats):
             raise ValueError(f"object {ob.name} requires an FDTD material")
         return mat
-
-    # --------------------------------------------------------------------------
 
     def __init__(self, ob, sim):
         self.sim = sim  # simulation
@@ -351,11 +339,11 @@ class Block:
 
         # object may optionally be snapped to grid
         sob = ob
-        snapc = collSnap.get()
+        snapc = coll_snap.get()
         if ob.verbose > 0:
             print("Block.init: checking", ob.name, "snap=", ob.snap)
         if ob.snap:
-            name = ob.snappedName
+            name = ob.snapped_name
             if name and scn.objects.get(name):
                 # bounds come from existing snapped version of object
                 sob = scn.objects.get(name)
@@ -372,10 +360,10 @@ class Block:
                 op.add_named(linked=True, name=ob.name)
                 sob = bpy.context.object
                 # and rename the duplicate
-                ob.snappedName = sob.name = ob.name + "_snap"
+                ob.snapped_name = sob.name = ob.name + "_snap"
                 sob.display_type = 'WIRE'
                 # sob.layers = [l==layerSnap for l in range(20)]
-                collMain.get().objects.unlink(sob)
+                coll_main.get().objects.unlink(sob)
                 snapc.objects.link(sob)
                 Iss = IGrid(Bs, dx)
                 Ise = IGrid(Be, dx)
@@ -431,28 +419,24 @@ class Block:
 
                 # insure that our snapped copy doesn't itself get snapped
                 sob.snap = False
-                sob.snappedName = ""
+                sob.snapped_name = ""
 
         self.ob = sob
         self.Bs, self.Be = bounds(sob)
         ##print(f"{ob.name} bounds: {fv(self.Bs)} - {fv(self.Be)}")
 
-    # --------------------------------------------------------------------------
-
-    def prepare_G(self):
+    def prepare_gen(self):
         yield
 
-    def sendDef_G(self):
+    def send_def_gen(self):
         yield
-
-
-# ==============================================================================
-# A simple volume of material in the sim world.
 
 
 class MatBlock(Block):
+    """A simple volume of material in the sim world"""
+
     # used to select a MATCYLINDER axis or identify Block as a MatBlock
-    mtypeCodes = {
+    mtype_codes = {
         'MATCUBE': 'C',
         'FIELDS': 'C',
         'MATMESH': 'C',
@@ -464,24 +448,20 @@ class MatBlock(Block):
     }
 
     @classmethod
-    def drawProps(self, ob, layout, scene):
+    def draw_props(self, ob, layout, scene):
         layout.prop(ob, 'snap', text="Snap bounds to sim grid")
 
-    # --------------------------------------------------------------------------
-
-    def prepare_G(self):
-        for _ in super().prepare_G():
+    def prepare_gen(self):
+        for _ in super().prepare_gen():
             yield
 
-    # --------------------------------------------------------------------------
-
-    def sendDef_G(self):
+    def send_def_gen(self):
         ob = self.ob
         if ob.verbose > 0:
-            print("MatBlock.sendDef_G")
+            print("MatBlock.send_def_gen")
         Bs, Be = self.Bs, self.Be
-        mat = self.getFieldMat()
-        mtype = self.mtypeCodes[ob['blockType']]
+        mat = self.get_field_mat()
+        mtype = self.mtype_codes[ob['blockType']]
 
         # if any array modifiers used, start with 0 index
         name = ob.name
@@ -518,7 +498,7 @@ class MatBlock(Block):
                     ):
                         print(f"**** {ob.name} array offsets not constant")
                     offset = mod.constant_offset_displace
-                    newSelection = []
+                    new_selection = []
                     for i in range(1, mod.count):
                         for Bs, Be in selection:
                             nameo = f"{ob.name}[{arrayi:03}]"
@@ -534,16 +514,16 @@ class MatBlock(Block):
                             self.sim.send(cmd)
                             if ob.verbose > 0:
                                 print(cmd, end='')
-                            newSelection.append((Bso, Beo))
+                            new_selection.append((Bso, Beo))
                             arrayi += 1
-                    selection.extend(newSelection)
+                    selection.extend(new_selection)
 
                 else:
                     print(f"**** {ob.name} needs Apply {t} Modifier!")
 
         yield
 
-    def assertMaterial(self, ob, type, value, color):
+    def assert_material(self, ob, type, value, color):
         """Assert that component ob of given type has a material with a
         name matching package-value. Also assigns the color if created.
         Returns the material.
@@ -565,30 +545,27 @@ class MatBlock(Block):
         return m
 
 
-# ==============================================================================
-# A volume of material in the sim world.
-
-
 class MeshMatBlock(MatBlock):
-    def prepare_G(self):
-        for _ in super().prepare_G():
+    """A volume of material in the sim world"""
+
+    def prepare_gen(self):
+        for _ in super().prepare_gen():
             yield
 
-    # --------------------------------------------------------------------------
-    # Write an IMBlock's mesh as a stack of image files for the server. Only
-    # alpha layer is used.
-
-    def sendDef_G(self):
+    def send_def_gen(self):
+        """Write an IMBlock's mesh as a stack of image files for the server.
+        Only alpha layer is used.
+        """
         ob = self.ob
         sim = self.sim
         scn = bpy.context.scene
         dx = sim.dx
         if ob.verbose > 0:
-            print("MeshMatBlock.sendDef_G", ob.name, "start")
+            print("MeshMatBlock.send_def_gen", ob.name, "start")
 
         # need the snap layer active for Dynamic Paint
-        snapc = collSnap.get()
-        snapHideSave = snapc.hide_viewport
+        snapc = coll_snap.get()
+        snap_hide_save = snapc.hide_viewport
         snapc.hide_viewport = False
 
         # make plane that covers object, and square for a DP canvas
@@ -600,7 +577,7 @@ class MeshMatBlock(MatBlock):
         nx = max(sim.grid(2 * r) * ifactor, 1)
         nz = max(sim.grid(D.z) * ifactor, 1)
         ##print(f"Plane {ob.name}: {D.z=} {sim.grid(D.z)=} {nz=}")
-        mat = self.getFieldMat()
+        mat = self.get_field_mat()
 
         # only create directory of cached files if it doesn't exist
         dir = f"//cache_dp/{ob.name}_{nz:04}"
@@ -643,9 +620,9 @@ class MeshMatBlock(MatBlock):
                 bpy.ops.dpaint.type_toggle(type='BRUSH')
 
             # put canvas plane in X,Y center of object
-            planeName = collPlane.name()
+            plane_name = coll_plane.name()
             vl = bpy.context.view_layer
-            lc = vl.layer_collection.children[planeName]
+            lc = vl.layer_collection.children[plane_name]
             vl.active_layer_collection = lc
             bpy.ops.mesh.primitive_plane_add()
             so = bpy.context.object
@@ -693,10 +670,10 @@ class MeshMatBlock(MatBlock):
             bpy.ops.mesh.uv_texture_add()
 
             # bake: write Z-slice images of object to png files
-            lastfn = csurf.image_output_path + (f"/paintmap{nz:04}.png")
+            last_fn = csurf.image_output_path + (f"/paintmap{nz:04}.png")
             if ob.verbose > 1:
-                print("deleting any", lastfn)
-            p = bpy.path.abspath(lastfn)
+                print("deleting any", last_fn)
+            p = bpy.path.abspath(last_fn)
             if os.path.isfile(p):
                 os.unlink(p)
             if ob.verbose > 1:
@@ -708,7 +685,7 @@ class MeshMatBlock(MatBlock):
             # wait for last file to be (re)created
             while not os.path.isfile(p):
                 if ob.verbose > 1:
-                    print("waiting for", lastfn)
+                    print("waiting for", last_fn)
                 yield
             ##so.hide_viewport = True
             bpy.data.objects.remove(so, do_unlink=True)
@@ -721,59 +698,50 @@ class MeshMatBlock(MatBlock):
             f"{Bs.z:g} {Be.z:g} {nx} {nz}\n"
         )
         if ob.verbose > 0:
-            print("MeshMatBlock.sendDef_G", ob.name, "done.")
-        snapc.hide_viewport = snapHideSave
-
-
-# ==============================================================================
-# An image-defined layer material in the sim world.
+            print("MeshMatBlock.send_def_gen", ob.name, "done.")
+        snapc.hide_viewport = snap_hide_save
 
 
 class LayerMatBlock(Block):
+    """An image-defined layer material in the sim world"""
+
     props = {
-        "fmatName": bp.StringProperty(description="FDTD material"),
+        "fmat_name": bp.StringProperty(description="FDTD material"),
         "snap": bp.BoolProperty(
             description="Snap bounds to sim grid", default=False
         ),
     }
 
     @classmethod
-    def drawProps(self, ob, layout, scene):
+    def draw_props(self, ob, layout, scene):
         layout.prop(ob, 'snap', text="Snap bounds to sim grid")
 
         layout.prop_search(
-            ob, 'fmatName', bpy.data, 'materials', text="FDTD material"
+            ob, 'fmat_name', bpy.data, 'materials', text="FDTD material"
         )
 
-    # --------------------------------------------------------------------------
-
-    def prepare_G(self):
-        for _ in super().prepare_G():
+    def prepare_gen(self):
+        for _ in super().prepare_gen():
             yield
 
-    # --------------------------------------------------------------------------
-
-    def sendDef_G(self):
+    def send_def_gen(self):
         ob = self.ob
         if ob.verbose > 0:
-            print("LayerMatBlock.sendDef_G", ob.name, "start")
+            print("LayerMatBlock.send_def_gen", ob.name, "start")
         mesh = ob.data
         mat = mesh.materials[0]
         tex = mat.node_tree.nodes.get('Image Texture')
         if not tex:
             raise ValueError(f"object {ob.name} missing Image Texture node")
         img = tex.image
-        imgFilePath = bpy.path.abspath(img.filepath)
+        img_file_path = bpy.path.abspath(img.filepath)
         Bs, Be = self.Bs, self.Be
-        fmatName = ob.get('fmatName')
+        fmat_name = ob.get('fmat_name')
         self.sim.send(
-            f"LI {ob.name} {fmatName} {Bs.x:g} {Be.x:g} "
-            f"{Bs.y:g} {Be.y:g} {Bs.z:g} {Be.z:g} {imgFilePath}\n"
+            f"LI {ob.name} {fmat_name} {Bs.x:g} {Be.x:g} "
+            f"{Bs.y:g} {Be.y:g} {Bs.z:g} {Be.z:g} {img_file_path}\n"
         )
         yield
-
-
-# ==============================================================================
 
 
 class FieldsBlock(MatBlock):
@@ -789,7 +757,7 @@ class FieldsBlock(MatBlock):
         "rec": bp.BoolProperty(
             description="Record as animation", default=True
         ),
-        "pmlBorder": bp.IntProperty(
+        "pml_border": bp.IntProperty(
             description="PML border width, cells", min=0, default=4
         ),
         "verbose": bp.IntProperty(
@@ -798,7 +766,7 @@ class FieldsBlock(MatBlock):
     }
 
     @classmethod
-    def drawProps(self, ob, layout, scene):
+    def draw_props(self, ob, layout, scene):
         spit = layout.split()
         col = spit.column(align=True)
         col.label(text="Grid size (dx):")
@@ -814,41 +782,39 @@ class FieldsBlock(MatBlock):
         col = spit.column()
         col.prop(ob, 'usPoll', text="µs/Step")
         col.prop(ob, 'msRate', text="ms/Up")
-        col.prop(ob, 'pmlBorder', text="PML cells")
+        col.prop(ob, 'pml_border', text="PML cells")
         col.prop(ob, 'verbose', text="Verbosity")
         col.prop(ob, 'rec', text="Record")
         layout.prop(ob, 'snap', text="Snap bounds to sim grid")
 
-    def sendSimDef_G(self):
+    def send_sim_def_gen(self):
         ob = self.ob
         if ob.verbose > 0:
-            print("FieldsBlock.sendSimDef_G")
+            print("FieldsBlock.send_sim_def_gen")
         yield
         Bs, Be = self.Bs, self.Be
-        mat = self.getFieldMat()
+        mat = self.get_field_mat()
         sim = self.sim
         sim.send("A units mm\n")
         sim.send(f"A usPoll {sim.usPoll}\n")
         sim.send(f"A verbose {sim.verbose}\n")
         cmd = (
             f"F {ob.name} {mat.name} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
-            f"{Bs.z:g} {Be.z:g} {sim.dx:g} 1 {sim.pmlBorder}"
+            f"{Bs.z:g} {Be.z:g} {sim.dx:g} 1 {sim.pml_border}"
         )
         if sim.verbose > 1:
             print(cmd)
         self.sim.send(cmd)
 
 
-# ==============================================================================
-# A block of resistive material. Creates the material if needed.
-
-
 class Resistor(MatBlock):
+    """A block of resistive material, creates the material if needed"""
+
     props = {
         "resistance": bp.FloatProperty(
             description="Resistance", min=0.0, default=1.0
         ),
-        "resUnits": bp.StringProperty(
+        "res_units": bp.StringProperty(
             description="units for resistance", default='ohms'
         ),
         "axis": bp.StringProperty(
@@ -857,19 +823,19 @@ class Resistor(MatBlock):
     }
 
     @classmethod
-    def drawProps(self, ob, layout, scene):
+    def draw_props(self, ob, layout, scene):
         split = layout.split(factor=0.6)
         split.row().prop(ob, 'resistance')
-        split.prop_search(ob, 'resUnits', scene, 'resUnits', text="")
+        split.prop_search(ob, 'res_units', scene, 'res_units', text="")
         layout.prop_search(ob, 'axis', scene, 's_axes', text="Axis")
         layout.prop(ob, 'verbose', text="Verbosity")
 
-    def prepare_G(self):
+    def prepare_gen(self):
         ob = self.ob
-        ##print("Resistor.prepare_G", ob.name, ob.axis)
-        for _ in super().prepare_G():
+        ##print("Resistor.prepare_gen", ob.name, ob.axis)
+        for _ in super().prepare_gen():
             yield
-        R = ob.resistance * resUnits[ob.resUnits]
+        R = ob.resistance * res_units[ob.res_units]
         sige = 1.0 / R
         N = self.Be - self.Bs
         if N.x < 0 or N.y < 0 or N.z < 0:
@@ -884,32 +850,31 @@ class Resistor(MatBlock):
             sige = sige * N.z / (N.x * N.y)
         sige = sige / mm
 
-        value = f"{ob.resistance:g}{ob.resUnits}"
+        value = f"{ob.resistance:g}{ob.res_units}"
         color = (0.025, 0.025, 0.025, 1.0)
-        m = self.assertMaterial(ob, "resistor", value, color)
+        m = self.assert_material(ob, "resistor", value, color)
         m.mur = 1.0
         m.epr = 1.0
         m.sige = sige
 
-    def sendDef_G(self):
+    def send_def_gen(self):
         ob = self.ob
         if ob.verbose > 0:
-            print("Resistor.sendDef_G", ob.name, "start")
-        for _ in super().sendDef_G():
+            print("Resistor.send_def_gen", ob.name, "start")
+        for _ in super().send_def_gen():
             yield
 
 
-# ==============================================================================
-# A capacitor formed from 2 plates and block of dielectric. Creates the
-# material if needed.
-
-
 class Capacitor(MatBlock):
+    """A capacitor formed from 2 plates and block of dielectric. Creates
+    the material if needed.
+    """
+
     props = {
         "capacitance": bp.FloatProperty(
             description="Capacitance", min=0.0, default=1.0
         ),
-        "capUnits": bp.StringProperty(
+        "cap_units": bp.StringProperty(
             description="units for capacitance", default='pf'
         ),
         "axis": bp.StringProperty(
@@ -918,19 +883,19 @@ class Capacitor(MatBlock):
     }
 
     @classmethod
-    def drawProps(self, ob, layout, scene):
+    def draw_props(self, ob, layout, scene):
         split = layout.split(factor=0.6)
         split.row().prop(ob, 'capacitance')
-        split.prop_search(ob, 'capUnits', scene, 'capUnits', text="")
+        split.prop_search(ob, 'cap_units', scene, 'cap_units', text="")
         layout.prop_search(ob, 'axis', scene, 's_axes', text="Axis")
         layout.prop(ob, 'verbose', text="Verbosity")
 
-    def prepare_G(self):
+    def prepare_gen(self):
         ob = self.ob
-        ##print("Capacitor.prepare_G", ob.name, ob.axis)
-        for _ in super().prepare_G():
+        ##print("Capacitor.prepare_gen", ob.name, ob.axis)
+        for _ in super().prepare_gen():
             yield
-        C = ob.capacitance * capUnits[ob.capUnits]
+        C = ob.capacitance * cap_units[ob.cap_units]
         N = self.Be - self.Bs
         if N.x < 0 or N.y < 0 or N.z < 0:
             print(f"**** Capacitor {ob.name} rotated")
@@ -947,37 +912,34 @@ class Capacitor(MatBlock):
         elif axis == 'Z':
             r = N.z / (N.x * N.y)
 
-        value = f"{ob.capacitance:g}{ob.capUnits}"
+        value = f"{ob.capacitance:g}{ob.cap_units}"
         color = (0.81, 0.75, 0.59, 1.0)
-        m = self.assertMaterial(ob, "capacitor", value, color)
+        m = self.assert_material(ob, "capacitor", value, color)
         m.mur = 1.0
         m.epr = C * r / (mm * e0)
         m.sige = 0.0
 
-    def sendDef_G(self):
+    def send_def_gen(self):
         ob = self.ob
         if ob.verbose > 0:
-            print(f"Capacitor.sendDef_G{ob.name} start")
-        for _ in super().sendDef_G():
+            print(f"Capacitor.send_def_gen{ob.name} start")
+        for _ in super().send_def_gen():
             yield
-
-
-# ==============================================================================
 
 
 class SubSpaceBlock(MatBlock):
     @classmethod
-    def drawProps(self, ob, layout, scene):
-        ##col.prop(ob, "dx", text="mm")         # assumed dx = parent.dx/2
+    def draw_props(self, ob, layout, scene):
+        ##col.prop(ob, "dx", text="mm")  # assumed dx = parent.dx/2
         pass
 
-    def sendSimDef_G(self):
+    def send_sim_def_gen(self):
         ob = self.ob
         if ob.verbose > 0:
-            print("SubSpaceBlock.sendSimDef_G")
+            print("SubSpaceBlock.send_sim_def_gen")
         yield
         Bs, Be = self.Bs, self.Be
-        mat = self.getFieldMat()
+        mat = self.get_field_mat()
         cmd = (
             f"G {ob.name} {mat.name} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
             f"{Bs.z:g} {Be.z:g} {ob.parent.name}\n"
@@ -985,9 +947,6 @@ class SubSpaceBlock(MatBlock):
         if sim.verbose > 1:
             print(cmd)
         self.sim.send(cmd)
-
-
-# ==============================================================================
 
 
 class Source(Block):
@@ -1031,7 +990,7 @@ class Source(Block):
     }
 
     @classmethod
-    def registerTypes(self):
+    def register_types(self):
         bpy.types.Scene.s_excitations = bp.CollectionProperty(
             type=bpy.types.PropertyGroup
         )
@@ -1041,27 +1000,27 @@ class Source(Block):
         bpy.types.Scene.s_functions = bp.CollectionProperty(
             type=bpy.types.PropertyGroup
         )
-        bpy.types.Scene.timeUnits = bp.CollectionProperty(
+        bpy.types.Scene.time_units = bp.CollectionProperty(
             type=bpy.types.PropertyGroup
         )
-        bpy.types.Scene.resUnits = bp.CollectionProperty(
+        bpy.types.Scene.res_units = bp.CollectionProperty(
             type=bpy.types.PropertyGroup
         )
-        bpy.types.Scene.capUnits = bp.CollectionProperty(
+        bpy.types.Scene.cap_units = bp.CollectionProperty(
             type=bpy.types.PropertyGroup
         )
 
     @classmethod
-    def unregisterTypes(self):
+    def unregister_types(self):
         del bpy.types.Scene.s_excitations
         del bpy.types.Scene.s_axes
         del bpy.types.Scene.s_functions
-        del bpy.types.Scene.timeUnits
-        del bpy.types.Scene.resUnits
-        del bpy.types.Scene.capUnits
+        del bpy.types.Scene.time_units
+        del bpy.types.Scene.res_units
+        del bpy.types.Scene.cap_units
 
     @classmethod
-    def populateTypes(self, scene):
+    def populate_types(self, scene):
         scene.s_excitations.clear()
         for k in ('Voltage', 'Current', 'Electrical', 'Magnetic'):
             scene.s_excitations.add().name = k
@@ -1071,18 +1030,18 @@ class Source(Block):
         scene.s_functions.clear()
         for k in ('Gaussian Pulse', 'Sine', 'Constant'):
             scene.s_functions.add().name = k
-        scene.timeUnits.clear()
-        for k in timeUnits.keys():
-            scene.timeUnits.add().name = k
-        scene.resUnits.clear()
-        for k in resUnits.keys():
-            scene.resUnits.add().name = k
-        scene.capUnits.clear()
-        for k in capUnits.keys():
-            scene.capUnits.add().name = k
+        scene.time_units.clear()
+        for k in time_units.keys():
+            scene.time_units.add().name = k
+        scene.res_units.clear()
+        for k in res_units.keys():
+            scene.res_units.add().name = k
+        scene.cap_units.clear()
+        for k in cap_units.keys():
+            scene.cap_units.add().name = k
 
     @classmethod
-    def drawProps(self, ob, layout, scene):
+    def draw_props(self, ob, layout, scene):
         layout.prop_search(
             ob, 's_excitation', scene, 's_excitations', text="Excitation"
         )
@@ -1099,32 +1058,34 @@ class Source(Block):
         if ob.s_function != 'Constant':
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_tstart', text="Start time")
-            split.prop_search(ob, 's_tstartUnits', scene, 'timeUnits', text="")
+            split.prop_search(
+                ob, 's_tstartUnits', scene, 'time_units', text=""
+            )
         if ob.s_function == 'Gaussian Pulse':
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_trise', text="Rise time")
-            split.prop_search(ob, 's_triseUnits', scene, 'timeUnits', text="")
+            split.prop_search(ob, 's_triseUnits', scene, 'time_units', text="")
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_duration', text="Duration")
             split.prop_search(
-                ob, 's_durationUnits', scene, 'timeUnits', text=""
+                ob, 's_durationUnits', scene, 'time_units', text=""
             )
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_tfall', text="Fall time")
-            split.prop_search(ob, 's_tfallUnits', scene, 'timeUnits', text="")
+            split.prop_search(ob, 's_tfallUnits', scene, 'time_units', text="")
         elif ob.s_function == 'Sine':
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_duration', text="Period")
             split.prop_search(
-                ob, 's_durationUnits', scene, 'timeUnits', text=""
+                ob, 's_durationUnits', scene, 'time_units', text=""
             )
         layout.prop(ob, 'snap', text="Snap bounds to sim grid")
         layout.prop(ob, 'verbose', text="Verbosity")
 
-    def sendDef_G(self):
+    def send_def_gen(self):
         ob = self.ob
         if ob.verbose > 0:
-            print("Source.sendDef_G")
+            print("Source.send_def_gen")
         yield
         Bs, Be = self.Bs, self.Be
         scale = ob.s_scale
@@ -1154,11 +1115,9 @@ class Source(Block):
         self.sim.send(cmd)
 
 
-# ==============================================================================
-# A matplotlib figure window.
-
-
 class Figure:
+    """A matplotlib figure window"""
+
     winx = None
     winy = None
     num = 1
@@ -1176,18 +1135,12 @@ class Figure:
         self.ylabel = ""
 
 
-# ==============================================================================
-
-
 class NFmtr(ticker.Formatter):
     def __init__(self, scale_x):
         self.scale_x = scale_x
 
     def __call__(self, x, pos=None):
         return "{0:g}".format(x / 10**self.scale_x)
-
-
-# ==============================================================================
 
 
 class Probe(Block):
@@ -1268,7 +1221,7 @@ class Probe(Block):
         'mE2': 'M',
         'mH2': 'N',
     }
-    fieldNamesMag = {
+    field_names_mag = {
         'Electric': 'E',
         'Magnetic': 'H',
         'Voltage': 'E',
@@ -1287,7 +1240,7 @@ class Probe(Block):
     }
 
     @classmethod
-    def registerTypes(self):
+    def register_types(self):
         ts = bpy.types.Scene
         ts.p_fields = bp.CollectionProperty(type=bpy.types.PropertyGroup)
         ts.p_fieldsMag = bp.CollectionProperty(type=bpy.types.PropertyGroup)
@@ -1296,7 +1249,7 @@ class Probe(Block):
         ts.p_legendLocs = bp.CollectionProperty(type=bpy.types.PropertyGroup)
 
     @classmethod
-    def unregisterTypes(self):
+    def unregister_types(self):
         del bpy.types.Scene.p_fields
         del bpy.types.Scene.p_fieldsMag
         del bpy.types.Scene.p_axes
@@ -1304,12 +1257,12 @@ class Probe(Block):
         del bpy.types.Scene.p_legendLocs
 
     @classmethod
-    def populateTypes(self, scene):
+    def populate_types(self, scene):
         scene.p_fields.clear()
         for k in self.fieldNames.keys():
             scene.p_fields.add().name = k
         scene.p_fieldsMag.clear()
-        for k in self.fieldNamesMag.keys():
+        for k in self.field_names_mag.keys():
             scene.p_fieldsMag.add().name = k
         scene.p_axes.clear()
         for k in ('X', 'Y', 'Z', '-X', '-Y', '-Z', 'XYZ', 'Magnitude'):
@@ -1334,7 +1287,7 @@ class Probe(Block):
             scene.p_legendLocs.add().name = k
 
     @classmethod
-    def drawProps(self, ob, layout, scene):
+    def draw_props(self, ob, layout, scene):
         fields = ('p_fields', 'p_fieldsMag')[ob.p_axis == 'Magnitude']
         layout.prop_search(
             ob, 'p_shape', scene, 'p_shapes', text="Display Shape"
@@ -1401,9 +1354,7 @@ class Probe(Block):
         super().__init__(ob, sim)
         self.history = {}
 
-    # --------------------------------------------------------------------------
-
-    def setPlaneTexture(self, data):
+    def set_plane_texture(self, data):
         ob = self.ob
         mesh = ob.data
         name = ob.name
@@ -1420,7 +1371,7 @@ class Probe(Block):
         img = tex.image
         if not img:
             raise ValueError(f"object {name} missing an image")
-        magScale, rep = ob.p_dispScale, ob.p_pixelRep
+        mag_scale, rep = ob.p_dispScale, ob.p_pixelRep
         nix, niy = self.nix, self.niy
         di = 0
         if (
@@ -1434,7 +1385,7 @@ class Probe(Block):
             else:
                 # greyscale
                 adata = np.frombuffer(data, np.float32).reshape((nix, niy)).T
-                adata = (np.abs(adata) * magScale).clip(0, 1.0)
+                adata = (np.abs(adata) * mag_scale).clip(0, 1.0)
                 apix = np.zeros((nix * niy, 4)) + 1.0
                 apix[:, 0:3] = adata.reshape((-1, 1))
             if rep > 1:
@@ -1448,15 +1399,13 @@ class Probe(Block):
                 f"should be {nix}x{niy}"
             )
 
-    # --------------------------------------------------------------------------
-    # Timeline frame changed: update probe from history.
-
-    def probePlaneFrameHandler(self, scene, depsgraph):
+    def probe_plane_frame_handler(self, scene, depsgraph):
+        """Timeline frame changed: update probe from history"""
         data = self.history.get(scene.frame_current)
         if not data is None:
-            self.setPlaneTexture(data)
+            self.set_plane_texture(data)
 
-    def probeValueFrameHandler(self, scene, depsgraph):
+    def probe_value_frame_handler(self, scene, depsgraph):
         data = self.history.get(scene.frame_current)
         ##print("probeValueFrHand:", self.ob.name, scn.frame_current, data)
         if not data is None:
@@ -1466,35 +1415,34 @@ class Probe(Block):
                 self.ob.p_value = data
         pass  # (fixes func pulldown indentation)
 
-    # --------------------------------------------------------------------------
     # Create or update a probe's display image, objects, etc.
 
-    def prepare_G(self):
+    def prepare_gen(self):
         ob = self.ob
         if ob.p_verbose > 0:
-            print("Probe.prepare_G start", self.ob.name)
+            print("Probe.prepare_gen start", self.ob.name)
         yield
         sim = self.sim
         scn = bpy.context.scene
         objs = bpy.data.objects
         posth = bpy.app.handlers.frame_change_post
         bmats = bpy.data.materials
-        fieldName = self.fieldNamesMag[ob.p_field]
+        field_name = self.field_names_mag[ob.p_field]
         sfactor = ob.p_sfactor
         dx = sim.dx
-        self.lastStep = -1
+        self.last_step = -1
         if ob.p_verbose > 0:
-            print(f"Probe.prepare_G for {ob.name}: {dx=} {sfactor=}")
+            print(f"Probe.prepare_gen for {ob.name}: {dx=} {sfactor=}")
 
         # get untrimmed probe dimensions
         B0l, B0u = self.Bs, self.Be
         ##print(f"{ob.name} bounds: {fv(B0l)}, {fv(B0u)}")
 
         # determine trimmed probe grid coords and size
-        fields = sim.fieldsBlock
+        fields = sim.fields_block
         fob = fields.ob
         Bsf, Bef = bounds(fob)
-        fover = overlap(ob, fob, fob.pmlBorder * dx)
+        fover = overlap(ob, fob, fob.pml_border * dx)
         if fover is None:
             raise ValueError("Bug: probe doesn't overlap Fields!")
         B1l, B1u = fover
@@ -1521,9 +1469,9 @@ class Probe(Block):
                 if ob.p_verbose > 0:
                     print(ob.name, "single point measurement,", n, "values")
                 self.n = n
-                if self.probeValueFrameHandler in posth:
-                    del posth[self.probeValueFrameHandler]
-                posth.append(self.probeValueFrameHandler)
+                if self.probe_value_frame_handler in posth:
+                    del posth[self.probe_value_frame_handler]
+                posth.append(self.probe_value_frame_handler)
             else:
                 self.n = nx * ny * nz
                 if ob.p_verbose > 0:
@@ -1557,7 +1505,7 @@ class Probe(Block):
             if len(mesh.materials) == 1:
                 mat = mesh.materials[0]
                 if mat and mat.use_nodes:
-                    ##print(f"Probe.prepare_G found mat {repr(mat)}")
+                    ##print(f"Probe.prepare_gen found mat {repr(mat)}")
                     tex = mat.node_tree.nodes.get('Image Texture')
                     if tex:
                         img = tex.image
@@ -1584,13 +1532,13 @@ class Probe(Block):
                     print(f"Probe: creating {nix}x{niy} image plane")
                 mesh.materials.clear()
                 mat = bpy.data.materials.new(name)
-                print(f"prepare_G created mat {repr(mat)}")
+                print(f"prepare_gen created mat {repr(mat)}")
                 mat.use_nodes = True
                 mat.specular_intensity = 0.0
                 mesh.materials.append(mat)
-                imgName = f"probe_{name}"
+                img_name = f"probe_{name}"
                 img = bpy.data.images.new(
-                    imgName, width=rep * nix, height=rep * niy
+                    img_name, width=rep * nix, height=rep * niy
                 )
 
                 tex = mat.node_tree.nodes.new(type='ShaderNodeTexImage')
@@ -1669,15 +1617,15 @@ class Probe(Block):
                 ud[2].uv = Vector((Bnewu.x, Bnewu.y))
                 ud[3].uv = Vector((Bnewl.x, Bnewu.y))
 
-            if self.probePlaneFrameHandler in posth:
-                del posth[self.probePlaneFrameHandler]
-            posth.append(self.probePlaneFrameHandler)
+            if self.probe_plane_frame_handler in posth:
+                del posth[self.probe_plane_frame_handler]
+            posth.append(self.probe_plane_frame_handler)
 
         else:  # 'Volume'
             # create H and E field arrow objects if needed
-            H = collH.get()
+            H = coll_H.get()
             H.hide_viewport = False
-            E = collE.get()
+            E = coll_E.get()
             E.hide_viewport = False
             n = (
                 ((nx + sfactor - 1) // sfactor)
@@ -1691,8 +1639,8 @@ class Probe(Block):
             self.n = ne
             if len(ob.children) != n:
                 if ob.p_verbose > 1:
-                    print(f"Probe: creating {n} {fieldName} arrows")
-                dx2, collection = ((0, E), (dx / 2, H))[fieldName == 'H']
+                    print(f"Probe: creating {n} {field_name} arrows")
+                dx2, collection = ((0, E), (dx / 2, H))[field_name == 'H']
                 # Is is parent lower-left index in full grid, Pp is coords
                 Pp = Vector((Is.i * dx, Is.j * dx, Is.k * dx))
                 # D2 is 1/2 cell extra for H, + offset of parent lower left
@@ -1734,14 +1682,14 @@ class Probe(Block):
                 mesh = bpy.data.meshes.new(name='Arrow')
                 mesh.from_pydata(verts, [], faces)
                 mesh.update()
-                mat = bmats[f"Field{fieldName}"]
+                mat = bmats[f"Field{field_name}"]
                 mesh.materials.append(mat)
                 for i in range(0, nx, sfactor):
                     for j in range(0, ny, sfactor):
                         for k in range(0, nz, sfactor):
                             # arrow name must be in sortable format
                             name = (
-                                f"{fieldName}{Is.i+i:03}"
+                                f"{field_name}{Is.i+i:03}"
                                 f"{Is.j+j:03}{Is.k+k:03}"
                             )
                             arrow = objs.new(name, mesh)
@@ -1764,45 +1712,43 @@ class Probe(Block):
                 if arrow.animation_data:
                     arrow.animation_data.action = None
 
-        ##print("Probe.prepare_G done.")
+        ##print("Probe.prepare_gen done.")
 
-    # --------------------------------------------------------------------------
-
-    def sendDef_G(self, update=False):
+    def send_def_gen(self, update=False):
         yield
-        self.sendDef(update)
+        self.send_def(update)
 
-    def sendDef(self, update=False):
-        ##print("Probe.sendDef_G start ", "PU"[update])
+    def send_def(self, update=False):
+        ##print("Probe.send_def_gen start ", "PU"[update])
         ob = self.ob
         Bs, Be = self.Bs, self.Be
-        fieldName = self.fieldNamesMag[ob.p_field]
+        field_name = self.field_names_mag[ob.p_field]
         ob.p_axisSign = 1
         axis = ob.p_axis
         if axis[0] == '-':
             ob.p_axisSign = -1
             axis = ob.p_axis[1]
-        dispType = 'Vec'
-        dispScale = ob.p_dispScale
+        disp_type = 'Vec'
+        disp_scale = ob.p_dispScale
         if ob.p_shape == 'Plane':
             if axis == 'XYZ':
-                dispType = 'RGB'
+                disp_type = 'RGB'
             else:
-                dispType = 'Mag'
+                disp_type = 'Mag'
         elif ob.p_shape == 'Line':
             if axis in 'ZYX':
-                dispType = ob.p_axis
+                disp_type = ob.p_axis
                 ##self.n = self.n + 1  # voltage sources include edges ???
         elif ob.p_shape == 'Point':
-            dispType = 'Mag'
-            dispScale = ob.p_plotScale
+            disp_type = 'Mag'
+            disp_scale = ob.p_plotScale
             if axis == 'XYZ':
-                dispType = 'Vec'
-            if fieldName == 'V':
-                fieldName = 'E'
+                disp_type = 'Vec'
+            if field_name == 'V':
+                field_name = 'E'
             if axis in 'ZYX':
                 if ob.p_sum:
-                    dispType = 'Sum'
+                    disp_type = 'Sum'
                 iaxis = ord(axis) - ord('X')
                 ##self.dist = (Be.x-Bs.x, Be.y-Bs.y, Be.z-Bs.z)[iaxis]
                 N = self.N
@@ -1820,17 +1766,16 @@ class Probe(Block):
 
         cmd = (
             f"{'PU'[update]} {ob.name} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
-            f"{Bs.z:g} {Be.z:g} {fieldName} {dispType[0]} "
-            f"{dispScale:g} {ob.p_sfactor} {ob.p_verbose}\n"
+            f"{Bs.z:g} {Be.z:g} {field_name} {disp_type[0]} "
+            f"{disp_scale:g} {ob.p_sfactor} {ob.p_verbose}\n"
         )
         if ob.p_verbose > 1:
             print(cmd)
         self.sim.send(cmd)
 
-    # --------------------------------------------------------------------------
-    # Get data values from server for one step.
+    def get_data_from_server(self):
+        """Get data values from server for one step"""
 
-    def getDataFromServer(self):
         scn = bpy.context.scene
         ob = self.ob
         sim = self.sim
@@ -1839,7 +1784,7 @@ class Probe(Block):
         s = sim.s
         cmd = f"Q {ob.name}"
         if ob.p_verbose > 2:
-            print("getDataFromServer:", ob.name, f"cmd='{cmd}'")
+            print("get_data_from_server:", ob.name, f"cmd='{cmd}'")
         ack = sim.send(cmd, 5)
         if len(ack) < 1 or ack[0] != ord('A'):
             ##print("non-A ack:", ack)
@@ -1879,11 +1824,11 @@ class Probe(Block):
         if rem > 0:
             raise IOError
 
-        if step == self.lastStep:
+        if step == self.last_step:
             if ob.p_verbose > 1:
                 print("Probe last step", ob.name)
             return None
-        self.lastStep = step
+        self.last_step = step
         data = np.frombuffer(bdata, dtype=dtype)
 
         if ob.p_sum:
@@ -1900,16 +1845,15 @@ class Probe(Block):
             print(np.frombuffer(data, np.float32))
         return data
 
-    # --------------------------------------------------------------------------
-    # Step probe 1 timestep, getting values from server.
+    def do_step(self):
+        """Step probe 1 timestep, getting values from server"""
 
-    def doStep(self):
         ob = self.ob
         if ob.p_shape == 'Line' and not (ob.p_sum or ob.p_avg):
             # no history stored for normal line probes
             return
 
-        data = self.getDataFromServer()
+        data = self.get_data_from_server()
         if data is None:
             return
         scn = bpy.context.scene
@@ -1951,11 +1895,11 @@ class Probe(Block):
                 i = sim.grid(Bs.x)
                 j = sim.grid(Bs.y)
                 k = sim.grid(Bs.z)
-                fieldName = self.fieldNamesMag[ob.p_field]
+                field_name = self.field_names_mag[ob.p_field]
                 units = ("V/m", "A/m")[ob.p_field == 'Magnetic']
                 print(
                     f"{step}: t={t:9.2e}: {ob.name} "
-                    f"{fieldName}[{i},{j},{k}]",
+                    f"{field_name}[{i},{j},{k}]",
                     end="",
                 )
                 if axis == 'XYZ':
@@ -2005,7 +1949,7 @@ class Probe(Block):
                     ##self.drawChartStep(I)
 
         elif ob.p_shape == 'Plane':
-            self.setPlaneTexture(data)
+            self.set_plane_texture(data)
             ##print(f"storing history[{sstep}]")
 
         else:  # 'Volume'
@@ -2022,14 +1966,14 @@ class Probe(Block):
                             HEr.append((-x / nx, -y / ny, -z / nz))
                 HE = np.array(HEr) * 32768 / 100.0
 
-            logMag, magScale = ob.p_log, ob.p_magScale
+            log_mag, mag_scale = ob.p_log, ob.p_magScale
             for i, arrow in enumerate(self.arrows):
                 arrow.rotation_euler.zero()
                 pr = False
                 ##pr = arrow.name in ('H040605', 'E040605')
                 x, y, z = data[i]
                 r2 = x * x + y * y + z * z
-                r2 *= magScale**2
+                r2 *= mag_scale**2
                 ##arrow.show_name = r2 > 0
                 if pr:
                     di = data[i]
@@ -2039,7 +1983,7 @@ class Probe(Block):
                     )
                 if r2 > 1e-12:
                     r = ma.sqrt(r2)
-                    if logMag:
+                    if log_mag:
                         ##r = 0.3*(ma.log(r)+4.7)
                         r = 0.25 * (ma.log10(r) + 6)
                     else:
@@ -2051,7 +1995,7 @@ class Probe(Block):
                         print(
                             f"{step}: {arrow.name} "
                             f"xyz=({x:6.4}, {y:6.4}, {z:6.4}) "
-                            f"r={r:6.4} {magScale}"
+                            f"r={r:6.4} {mag_scale}"
                         )
                     M = Matrix(((x, 0, 0), (y, 0, 0), (z, 0, 0)))
                     # rely on rotate() to normalize matrix
@@ -2066,25 +2010,22 @@ class Probe(Block):
         # record data history
         if not isinstance(data, (int, float, tuple)):
             data = data.copy()
-        ##print("Probe.doStep:", ob.name, "step", step, "data=", data)
+        ##print("Probe.do_step:", ob.name, "step", step, "data=", data)
         self.history[step] = data
 
-    # --------------------------------------------------------------------------
-    # Cmd-P: Plot all point probe value histories.
-
     @classmethod
-    def plotAllSetUp(self):
+    def plot_all_set_up(self):
         self.figs = {}
 
-    def getPlotFig(self, dataShape):
+    def get_plot_fig(self, data_shape):
         ob = self.ob
         color = None
-        ##figType = ob.p_shape + ob.p_field + ob.p_axis + repr(dataShape)
-        figType = ob.p_shape + ob.p_field + repr(dataShape)
-        fig = self.figs.get(figType)
+        ##fig_type = ob.p_shape + ob.p_field + ob.p_axis + repr(data_shape)
+        fig_type = ob.p_shape + ob.p_field + repr(data_shape)
+        fig = self.figs.get(fig_type)
         if not fig:
             fig = Figure()
-            self.figs[figType] = fig
+            self.figs[fig_type] = fig
             if ob.material_slots:
                 mat = ob.material_slots[0].material
                 color = mat.diffuse_color
@@ -2093,6 +2034,7 @@ class Probe(Block):
         return fig, color
 
     def plot(self):
+        """Cmd-P: Plot all point probe value histories"""
         ob = self.ob
         sim = self.sim
         if ob.p_verbose > 0:
@@ -2112,18 +2054,18 @@ class Probe(Block):
                 h = np.array(items)
                 xs, ys = h[h[:, 0].argsort()].T
                 xs *= sim.dt
-                fig, color = self.getPlotFig(1)
+                fig, color = self.get_plot_fig(1)
                 fig.xlabel = "Time"
                 fig.xunit = "s"
             else:
                 # 'Line'
-                self.lastStep = -1  # force data grab
-                ys = self.getDataFromServer()
+                self.last_step = -1  # force data grab
+                ys = self.get_data_from_server()
                 Bs, Be = self.Bs, self.Be
                 N = self.N
                 s = Bs.x
                 e = Be.x
-                fig, color = self.getPlotFig(N)
+                fig, color = self.get_plot_fig(N)
                 if N.j > 1:
                     s = Bs.y
                     e = Be.y
@@ -2168,7 +2110,7 @@ class Probe(Block):
             print("not plottable")
 
     @classmethod
-    def plotAllFinish(self):
+    def plot_all_finish(self):
         if not self.figs:
             print("no plottable probes")
             return
@@ -2221,16 +2163,16 @@ class Probe(Block):
             plt.ylabel(yl)
             plt.grid(True)
             plt.subplots_adjust(left=0.15, top=0.95, right=0.95)
-            if not isLinux:
+            if not is_linux:
                 plt.show(block=False)
-            outputDir = os.path.join(cwd, 'output')
-            print(f"writing plots to {outputDir}")
-            if not os.path.exists(outputDir):
-                os.mkdir(outputDir)
-            plt.savefig(os.path.join(outputDir, title))
+            output_dir = os.path.join(cwd, 'output')
+            print(f"writing plots to {output_dir}")
+            if not os.path.exists(output_dir):
+                os.mkdir(output_dir)
+            plt.savefig(os.path.join(output_dir, title))
 
 
-blockClasses = {
+block_classes = {
     'FIELDS': FieldsBlock,
     'MATCUBE': MatBlock,
     'MATCYLINDERX': MatBlock,
@@ -2244,8 +2186,6 @@ blockClasses = {
     'SOURCE': Source,
     'SUBSPACE': SubSpaceBlock,
 }
-
-# ==============================================================================
 
 
 class Sim:
@@ -2267,8 +2207,8 @@ class Sim:
         preob = obs[0]
         self.state = INITIALIZING
         self.dx = preob.dx
-        self.fieldsBlock = FieldsBlock(preob, self)
-        self.fieldsOb = fob = self.fieldsBlock.ob
+        self.fields_block = FieldsBlock(preob, self)
+        self.fields_ob = fob = self.fields_block.ob
         self.verbose = fob.verbose
         print("Verbosity level", self.verbose)
         if self.verbose > 0:
@@ -2277,15 +2217,14 @@ class Sim:
         ##print(f"sim {id(self)} init: state=0")
         self.history = {}
         self.dt = 0.0
-        self.activeOb = context.object
+        self.active_ob = context.object
         bpy.app.handlers.frame_change_post.clear()
-        self.onScreenInit(context)
-        self.gen = self.stepWholeFDTD_G()
+        self.on_screen_init(context)
+        self.gen = self.step_whole_fdtd_gen()
 
-    # --------------------------------------------------------------------------
-    # Open a connection to the server, as self.s
+    def start_fdtd(self):
+        """Open a connection to the server, as self.s"""
 
-    def startFDTD(self):
         import socket
 
         HOST = "localhost"  # The remote host
@@ -2317,20 +2256,19 @@ class Sim:
         self.s = s
         print("Connected")
 
-    # --------------------------------------------------------------------------
-    # Send a command to the FDTD server, returning nrecv bytes.
-    # The default is to expect an 'A' ack.
-
     def send(self, text, nrecv=None, check=True):
+        """Send a command to the FDTD server, returning nrecv bytes.
+        The default is to expect an 'A' ack.
+        """
         s = self.s
         s.send(text.encode("utf-8"))
         if nrecv is None:
             r = s.recv(1)
             if r == b'N':
                 # server got an error: report it and stop (server doesn't)
-                errLen = int(s.recv(2))
-                errMsg = s.recv(errLen).decode("utf-8")
-                raise RuntimeError(errMsg)
+                err_len = int(s.recv(2))
+                err_msg = s.recv(err_len).decode("utf-8")
+                raise RuntimeError(err_msg)
             elif check and r != b'A':
                 raise IOError(f"Expected 'A' ack but got '{r}'")
         else:
@@ -2340,11 +2278,10 @@ class Sim:
     def grid(self, x):
         return round(x / self.dx)
 
-    # --------------------------------------------------------------------------
-
-    def newMaterial(self, name, value, alpha=None):
+    def new_material(self, name, value, alpha=None):
         """Create a material if it doesn't exist, given its name,
-        (color, mur, epr, sige), and transparency."""
+        (color, mur, epr, sige), and transparency.
+        """
         bmats = bpy.data.materials
         m = bmats.get(name)
         if m is None:
@@ -2361,8 +2298,8 @@ class Sim:
             node.inputs['Alpha'].default_value = alpha
             m.blend_method = 'BLEND'
 
-    def getMaterialsAndDims(self):
-        # material name, color [R,G,B,A]       mur, epr, sige
+    def get_materials_and_dims(self):
+        # material name, color [R,G,B,A], mur, epr, sige
         mats = {
             'FieldE': ((0, 0, 1, 1.0), 0, 0, 0),
             'FieldH': ((1, 0, 0, 1.0), 0, 0, 0),
@@ -2370,7 +2307,7 @@ class Sim:
             'FieldJ': ((0, 1, 1, 1.0), 0, 0, 0),
             'Air': ((0.5, 0.5, 1, 0.1), 1.0, 1.0, 0.0),
         }
-        matsT = {
+        mats_tr = {
             'Copper': ((0.45, 0.14, 0.06, 1.0), 1.0, 1.0, 9.8e7),
             'CopperLC': ((0.45, 0.14, 0.06, 1.0), 1.0, 1.0, 5.8e7),  # LC
             'Metal': ((0.45, 0.14, 0.06, 1.0), 1.0, 1.0, 3.27e7),  # LC
@@ -2389,14 +2326,14 @@ class Sim:
             'Cast Iron': ((0.81, 0.75, 0.60, 1.0), 60.0, 1.0, 0.0),  # LC
         }
         for name, value in mats.items():
-            self.newMaterial(name, value)
-        for name, value in matsT.items():
-            self.newMaterial(name, value, 1.0)
-            self.newMaterial(f"{name}-T", value, 0.3)
+            self.new_material(name, value)
+        for name, value in mats_tr.items():
+            self.new_material(name, value, 1.0)
+            self.new_material(f"{name}-T", value, 0.3)
 
         # get simulation area dimensions from parent Fields object
         scn = bpy.context.scene
-        ob = self.fieldsOb
+        ob = self.fields_ob
         for key, value in FieldsBlock.props.items():
             setattr(self, key, getattr(ob, key))
         self.nx = ma.floor(ob.dimensions.x / ob.dx)
@@ -2410,20 +2347,18 @@ class Sim:
             scn.frame_set(1)
             self.frame_no = 1
 
-    # --------------------------------------------------------------------------
-    # Generator to create sim-blocks for all visible blocks within Fields.
-
-    def createBlocks_G(self):
-        fob = self.fieldsOb
+    def create_blocks_gen(self):
+        """Generator to create sim-blocks for all visible blocks within Fields."""
+        fob = self.fields_ob
         if fob.verbose > 0:
-            print("createBlocks_G start")
-        self.blocks = [self.fieldsBlock]
+            print("create_blocks_gen start")
+        self.blocks = [self.fields_block]
         obs = list(bpy.context.visible_objects)
         obs.sort(key=lambda ob: ob.name)
         scn = bpy.context.scene
-        collMain.get().hide_viewport = False
-        ##collSnap.get().hide_viewport = True
-        haveSnap = False
+        coll_main.get().hide_viewport = False
+        ##coll_snap.get().hide_viewport = True
+        have_snap = False
 
         # create a block for each object
         for ob in obs:
@@ -2438,16 +2373,16 @@ class Sim:
             block = None
             bt = ob.get('blockType')
 
-            blockClass = blockClasses.get(bt)
+            block_class = block_classes.get(bt)
             if fob.verbose > 1:
                 print(
-                    "createBlocks:", ob.name, bt, blockClass, ob.hide_viewport
+                    "createBlocks:", ob.name, bt, block_class, ob.hide_viewport
                 )
             if ob.snap:
                 if fob.verbose > 1:
                     print("Block", ob.name, "is snap")
-                haveSnap = True
-            if blockClass and not ob.hide_viewport:
+                have_snap = True
+            if block_class and not ob.hide_viewport:
                 if fob.verbose > 1:
                     print("  createBlocks verified", ob.name)
                 over = overlap(fob, ob)
@@ -2456,40 +2391,36 @@ class Sim:
                         print("no overlap for", ob.name)
                 if over:
                     # create block for object or optional snapped object
-                    block = blockClass(ob, self)
+                    block = block_class(ob, self)
                     ob = block.ob
                     if fob.verbose > 1:
-                        print("=====", ob.name, bt, blockClass)
+                        print("=====", ob.name, bt, block_class)
                         print("  overlap=", fv(over[0]), fv(over[1]))
-                    for _ in block.prepare_G():
+                    for _ in block.prepare_gen():
                         yield
                     self.blocks.append(block)
 
         scn.frame_set(1)
-        if haveSnap:
+        if have_snap:
             if fob.verbose > 1:
-                print("createBlocks end: haveSnap")
-            ##collMain.get().hide_viewport = True
-            collSnap.get().hide_viewport = False
+                print("createBlocks end: have_snap")
+            ##coll_main.get().hide_viewport = True
+            coll_snap.get().hide_viewport = False
 
-    # --------------------------------------------------------------------------
-
-    def findBlock(self, ob):
+    def find_block(self, ob):
         for block in self.blocks:
             if block.ob == ob:
                 return block
         return None
 
-    def sendFMaterial(self, ob, m):
+    def send_f_material(self, ob, m):
         self.fmats.append(m)
         if ob.verbose > 1:
             print(" adding fmat", m.name)
         self.send(f"M {m.name} {m.mur:g} {m.epr:g} {m.sige:g} 0\n")
 
-    # --------------------------------------------------------------------------
-
-    def sendDefs_G(self):
-        ##print("Sim.sendDefs_G start")
+    def send_defs_gen(self):
+        ##print("Sim.send_defs_gen start")
 
         # collect and send defs for Field Materials used by sim objects
         self.fmats = fmats = []
@@ -2504,7 +2435,7 @@ class Sim:
             if link == 'DATA':
                 if ob.data and ob.data.materials:
                     if ob.blockType == 'MATLAYER':
-                        m = bpy.data.materials.get(ob.fmatName)
+                        m = bpy.data.materials.get(ob.fmat_name)
                     else:
                         m = ob.data.materials[0]
                         if not m and ob.material_slots:
@@ -2514,22 +2445,21 @@ class Sim:
                     m = ob.material_slots[0].material
 
             if m and not m in fmats:
-                self.sendFMaterial(ob, m)
+                self.send_f_material(ob, m)
 
         # send general sim parameters to server
-        for _ in self.fieldsBlock.sendSimDef_G():
+        for _ in self.fields_block.send_sim_def_gen():
             yield
 
         # send defintions for sim objects
         for block in self.blocks:
-            if block != self.fieldsBlock:
-                for _ in block.sendDef_G():
+            if block != self.fields_block:
+                for _ in block.send_def_gen():
                     yield
 
-    # --------------------------------------------------------------------------
-    # Process one timestep of each sim block.
+    def do_step_blocks(self):
+        """Process one timestep of each sim block"""
 
-    def doStepBlocks(self):
         scn = bpy.context.scene
         if self.verbose > 0:
             tms = int(time.time() * 1000)
@@ -2542,32 +2472,31 @@ class Sim:
             scn.frame_set(self.frame_no)
             self.frame_no += 1
         for block in self.blocks:
-            if hasattr(block, 'doStep') and not block.ob.hide_viewport:
-                block.doStep()
-            stop_ps = self.fieldsOb.get('stop_ps', 0)
+            if hasattr(block, 'do_step') and not block.ob.hide_viewport:
+                block.do_step()
+            stop_ps = self.fields_ob.get('stop_ps', 0)
             current_ps = scn.frame_current * self.dt * 1e12
             ##print(f"{stop_ps=} {self.frame_no=} {self.dt=} {current_ps}")
             if stop_ps > 0 and current_ps > stop_ps:
                 print("Reached stop time")
-                fieldOperator.cancel(bpy.context)
+                field_operator.cancel(bpy.context)
             if self.state == STOPPED:
-                ##print("doStepBlocks stopped")
+                ##print("do_step_blocks stopped")
                 break
         scn.frame_set(scn.frame_current + 1)
 
-    # --------------------------------------------------------------------------
-    # Do one timer step: first initialize simulation, then step it.
+    def step_whole_fdtd_gen(self):
+        """Do one timer step: first initialize simulation, then step it"""
 
-    def stepWholeFDTD_G(self):
-        ##print("stepWholeFDTD_G start")
-        self.getMaterialsAndDims()
+        ##print("step_whole_fdtd_gen start")
+        self.get_materials_and_dims()
 
         try:
-            self.startFDTD()
+            self.start_fdtd()
         except IOError:
-            xcodeRun()
+            start_xcode()
             time.sleep(5)
-            self.startFDTD()
+            self.start_fdtd()
 
         # tell simulator to chdir to blender file's directory
         cmd = f"C {cwd}\n"
@@ -2576,78 +2505,76 @@ class Sim:
         self.send(cmd)
         yield
 
-        for _ in self.createBlocks_G():
+        for _ in self.create_blocks_gen():
             yield
-        for _ in self.sendDefs_G():
+        for _ in self.send_defs_gen():
             yield
         bpy.ops.object.select_all(action='DESELECT')
-        bpy.context.view_layer.objects.active = self.activeOb
-        if self.activeOb:
-            self.activeOb.select_set(True)
+        bpy.context.view_layer.objects.active = self.active_ob
+        if self.active_ob:
+            self.active_ob.select_set(True)
         self.dt = 0.5 * self.dx * mm / c0
         try:
             self.send('R')
         except IOError:
             print("*** Start Field Server first! ***")
             raise
-        ##print(f"sim {id(self)} stepWholeFDTD_G: set state=3, looping")
+        ##print(f"sim {id(self)} step_whole_fdtd_gen: set state=3, looping")
         self.state = RUNNING
         while self.state != STOPPED:
             yield
             if self.state == RUNNING:
-                self.doStepBlocks()
-        ##print("stepWholeFDTD_G done")
-
-    # --------------------------------------------------------------------------
-    # Tell the server to pause/unpause simulation.
+                self.do_step_blocks()
+        ##print("step_whole_fdtd_gen done")
 
     def pause(self, context):
+        """Tell the server to pause/unpause simulation"""
+
         context.area.tag_redraw()  # update status line
         ack = self.send('D', 1)
         if len(ack) < 1 or ack[0] != ord('A'):
             ##print("non-A ack:", ack)
             return
 
-    # --------------------------------------------------------------------------
-    # On-screen status display.
+    def on_screen_init(self, context):
+        """On-screen status display"""
 
-    def onScreenInit(self, context):
-        # TODO: make onScreenInit work from "Run FDTD" button too
+        # TODO: make on_screen_init work from "Run FDTD" button too
         area = context.area
-        ##print(f"onScreenInit {id(self)} {area=}")
+        ##print(f"on_screen_init {id(self)} {area=}")
         if area and area.type == 'VIEW_3D':
-            self.lastPosMeas = None
+            self.last_pos_meas = None
             oldh = bpy.app.driver_namespace.get('fields_handle')
-            ##print(f"onScreenInit: in 3D area, {oldh=}")
+            ##print(f"on_screen_init: in 3D area, {oldh=}")
             if oldh:
                 bpy.types.SpaceView3D.draw_handler_remove(oldh, 'WINDOW')
             args = (context,)
             self.handle = bpy.types.SpaceView3D.draw_handler_add(
-                self.drawCallback, args, 'WINDOW', 'POST_PIXEL'
+                self.draw_callback, args, 'WINDOW', 'POST_PIXEL'
             )
             posth = bpy.app.handlers.frame_change_post
-            if self.frameHandler in posth:
-                ##print("onScreenInit: deleting old post handler")
-                del posth[self.frameHandler]
-            posth.append(self.frameHandler)
+            if self.frame_handler in posth:
+                ##print("on_screen_init: deleting old post handler")
+                del posth[self.frame_handler]
+            posth.append(self.frame_handler)
             self.area3d = context.area
             bpy.app.driver_namespace['fields_handle'] = self.handle
-            bpy.app.handlers.load_pre.append(self.onScreenRemove)
+            bpy.app.handlers.load_pre.append(self.on_screen_remove)
 
-    def drawCallback(self, context):
+    def draw_callback(self, context):
         ##try:
 
         ##print("trying draw status")
         scn = bpy.context.scene
         font_id = 0
         w = context.region.width
-        font_scale = (2, 1)[isLinux]
+        font_scale = (2, 1)[is_linux]
         blf.position(font_id, w - 200 * font_scale, 10, 0)
         blf.color(font_id, 255, 255, 255, 255)
         blf.size(font_id, 12 * font_scale)
         status = f"{scn.frame_current * self.dt * 1e12:9.3f} ps"
         if self:
-            ##print(f"sim {id(self)} drawCallback: state={self.state}")
+            ##print(f"sim {id(self)} draw_callback: state={self.state}")
             if self.state == PAUSED:
                 status += '  PAUSED'
             elif self.state == STOPPED:
@@ -2657,9 +2584,9 @@ class Sim:
         # draw mobile-probe measurement value next to mouse pointer
         mpos = self.mouse_pos
         ob = bpy.context.object
-        haveDrawnMeas = False
+        have_drawn_meas = False
         if mpos and ob:
-            pblock = self.findBlock(ob)
+            pblock = self.find_block(ob)
             if hasattr(pblock, 'measurement_attr_name'):
                 aname = pblock.measurement_attr_name
                 units = pblock.measurement_units
@@ -2669,30 +2596,27 @@ class Sim:
                     x = mpos[0] + 15
                     y = mpos[1] + 15
                     blf.position(font_id, x, y, 0)
-                    self.lastPosMeas = [x, y]
+                    self.last_pos_meas = [x, y]
                     blf.draw(font_id, f"{meas:g} {units}")
-                    haveDrawnMeas = True
+                    have_drawn_meas = True
 
         # erase measurement when another object is selected
-        if not haveDrawnMeas and self.lastPosMeas is not None:
+        if not have_drawn_meas and self.last_pos_meas is not None:
             ##print("clearing measurement")
-            x, y = self.lastPosMeas
+            x, y = self.last_pos_meas
             blf.position(font_id, x, y, 0)
             blf.draw(font_id, "")
-            self.lastPosMeas = None
+            self.last_pos_meas = None
 
-    def frameHandler(self, scene, depsgraph):
-        ##print(f"frameHandler {id(self)}")
+    def frame_handler(self, scene, depsgraph):
+        ##print(f"frame_handler {id(self)}")
         self.area3d.tag_redraw()  # update status line
 
-    def onScreenRemove(self, dummy1, dummy2):
-        ##print(f"onScreenRemove {id(self)}")
+    def on_screen_remove(self, dummy1, dummy2):
+        ##print(f"on_screen_remove {id(self)}")
         bpy.types.SpaceView3D.draw_handler_remove(self.handle, 'WINDOW')
         bpy.app.driver_namespace.pop('fields_handle')
         bpy.context.area.tag_redraw()
-
-
-# ==============================================================================
 
 
 class FieldOperator(bpy.types.Operator):
@@ -2704,41 +2628,39 @@ class FieldOperator(bpy.types.Operator):
     timer = None
     sim = None
 
-    # --------------------------------------------------------------------------
-    # Timer routines for modal operator.
+    def start_timer(self):
+        """Timer routines for modal operator"""
 
-    def startTimer(self):
         sim = self.sim
         if not sim:
             return
         context = self.context
         context.window_manager.modal_handler_add(self)
-        rate = sim.fieldsOb.get('msRate') or 200
+        rate = sim.fields_ob.get('msRate') or 200
         rate = max(min(rate, 1000), 10)
         print(f"starting {rate} ms/tick timer")
         self.timer = context.window_manager.event_timer_add(
             rate / 1000.0, window=context.window
         )
 
-    def stopTimer(self):
+    def stop_timer(self):
         self.context.window_manager.event_timer_remove(self.timer)
         self.timer = None
 
-    # --------------------------------------------------------------------------
-    # Dynamic probing.
+    def dyn_probe(self, event, action):
+        """Dynamic probing"""
 
-    def dynProbe(self, event, action):
         ob = bpy.context.object
         name = ob.name if ob else "<no object>"
-        ##print("dynProbe:", action, name, ob.p_verbose)
+        ##print("dyn_probe:", action, name, ob.p_verbose)
         if ob and ob.p_verbose > 0:
-            print("dynProbe:", action, name)
+            print("dyn_probe:", action, name)
         sim = self.sim
         if ob and ob.get('blockType') == 'PROBE':
-            pblock = sim.findBlock(ob)
+            pblock = sim.find_block(ob)
             ##print("found block", pblock)
             if pblock:
-                loc = getMouse3D(event)
+                loc = get_mouse_3d(event)
                 sim.mouse_pos = [event.mouse_region_x, event.mouse_region_y]
                 if loc is None:
                     print(
@@ -2748,66 +2670,64 @@ class FieldOperator(bpy.types.Operator):
                 else:
                     if action == 'START':
                         if ob.p_verbose > 0:
-                            print("dynProbe: starting move", ob.name)
-                        self.probeDrag = ob
-                        self.obRelMouse = Vector(ob.location) - Vector(loc)
+                            print("dyn_probe: starting move", ob.name)
+                        self.probe_drag = ob
+                        self.ob_rel_mouse = Vector(ob.location) - Vector(loc)
                     elif action == 'MOVE':
                         if ob.p_verbose > 0:
-                            print("dynProbe: moving", ob.name, pblock)
-                        # obNewLoc = self.obRelMouse + Vector(loc)
-                        ###print("obNewLoc=", fv(obNewLoc))
-                        # if self.lockAxis == 0:
-                        #    ob.location.x = obNewLoc.x
-                        # elif self.lockAxis == 1:
-                        #    ob.location.y = obNewLoc.y
-                        # elif self.lockAxis == 2:
-                        #    ob.location.z = obNewLoc.z
+                            print("dyn_probe: moving", ob.name, pblock)
+                        # ob_new_loc = self.ob_rel_mouse + Vector(loc)
+                        ###print("ob_new_loc=", fv(ob_new_loc))
+                        # if self.lock_axis == 0:
+                        #    ob.location.x = ob_new_loc.x
+                        # elif self.lock_axis == 1:
+                        #    ob.location.y = ob_new_loc.y
+                        # elif self.lock_axis == 2:
+                        #    ob.location.z = ob_new_loc.z
                         # else:
-                        #    ob.location = obNewLoc
+                        #    ob.location = ob_new_loc
                         pblock.Bs, pblock.Be = bounds(ob)
-                        pblock.sendDef(update=True)
-                        pblock.lastStep -= 1
-                        pblock.doStep()
+                        pblock.send_def(update=True)
+                        pblock.last_step -= 1
+                        pblock.do_step()
                     else:
                         if ob.p_verbose > 1:
-                            print("dynProbe: move done")
-                        self.probeDrag = None
+                            print("dyn_probe: move done")
+                        self.probe_drag = None
         return {'RUNNING_MODAL'}
-
-    # --------------------------------------------------------------------------
 
     def modal(self, context, event):
         sim = self.sim
         Pm = Vector((event.mouse_x, event.mouse_y))
-        S = self.winStart
-        E = self.winEnd
-        inWin = Pm.x >= S.x and Pm.x < E.x and Pm.y >= S.y and Pm.y < E.y
-        ##print("mouse @", fv(Pm), inWin, fv(S), fv(E))
+        S = self.win_start
+        E = self.win_end
+        in_win = Pm.x >= S.x and Pm.x < E.x and Pm.y >= S.y and Pm.y < E.y
+        ##print("mouse @", fv(Pm), in_win, fv(S), fv(E))
 
-        ##if inWin and not event.type in ('TIMER'):
+        ##if in_win and not event.type in ('TIMER'):
         ##    print("event:", event.value, event.type, "oskey=", event.oskey)
 
         if sim.verbose > 1 and event.type == 'P':
             print(f"'P', oskey={event.oskey} value={event.value}")
         if event.value == 'PRESS':
-            if not inWin:
+            if not in_win:
                 return {'PASS_THROUGH'}
 
-            if self.probeDrag:
+            if self.probe_drag:
                 if event.type in ('LEFTMOUSE', 'RET', 'ESC'):
-                    return self.dynProbe(event, 'DONE')
+                    return self.dyn_probe(event, 'DONE')
 
             if sim.state >= RUNNING:
                 ob = bpy.context.object
                 if event.type == 'G':
                     if ob.blockType == 'PROBE' and ob.p_shape == 'Point':
-                        self.lockAxis = None
-                        self.dynProbe(event, 'START')
+                        self.lock_axis = None
+                        self.dyn_probe(event, 'START')
                     return {'PASS_THROUGH'}
 
                 elif event.type in 'XYZ':
                     if ob.blockType == 'PROBE' and ob.p_shape == 'Point':
-                        self.lockAxis = ord(event.type) - ord('X')
+                        self.lock_axis = ord(event.type) - ord('X')
                         # return {'RUNNING_MODAL'}
                     return {'PASS_THROUGH'}
 
@@ -2815,7 +2735,7 @@ class FieldOperator(bpy.types.Operator):
                     print("ESC pressed while in sim")
                     return self.cancel(context)
                     # refresh viewport to update status line
-                    # note: kills context.area, used in onScreenInit
+                    # note: kills context.area, used in on_screen_init
                     bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
             elif event.type == 'ESC':
@@ -2823,28 +2743,28 @@ class FieldOperator(bpy.types.Operator):
                 return self.cancel(context)
 
         elif event.value == 'RELEASE':
-            ##print(f"Release: {inWin=} {self.probeDrag=} {event.type=}")
-            if not inWin:
+            ##print(f"Release: {in_win=} {self.probe_drag=} {event.type=}")
+            if not in_win:
                 return {'PASS_THROUGH'}
-            if self.probeDrag:
+            if self.probe_drag:
                 # if event.type == 'MOUSEMOVE':
-                #    return self.dynProbe(event, 'MOVE')
+                #    return self.dyn_probe(event, 'MOVE')
                 if event.type in ('LEFTMOUSE', 'RET', 'ESC'):
-                    return self.dynProbe(event, 'DONE')
+                    return self.dyn_probe(event, 'DONE')
 
         elif event.type == 'TIMER':
             if self.timer is None:
                 return {'CANCELLED'}
             else:
-                ##print(f"Timer: {inWin=} {self.probeDrag=} {event.type=}")
-                if inWin and self.probeDrag:
-                    return self.dynProbe(event, 'MOVE')
+                ##print(f"Timer: {in_win=} {self.probe_drag=} {event.type=}")
+                if in_win and self.probe_drag:
+                    return self.dyn_probe(event, 'MOVE')
 
                 try:
                     sim.gen.__next__()
                 except StopIteration:
                     if sim.verbose > 1:
-                        print("modal: timer: stepWholeFDTD_G done")
+                        print("modal: timer: step_whole_fdtd_gen done")
                 except IOError:
                     print("Timer IOError exception")
                     if sim.s is None:
@@ -2864,15 +2784,17 @@ class FieldOperator(bpy.types.Operator):
         return {'PASS_THROUGH'}
 
     def invoke(self, context, event):
-        global sims, fieldOperator
-        fieldOperator = self
+        global sims, field_operator
+        field_operator = self
         sim = sims.get(context.scene)
         print("\n=== Starting BField FDTD simulation ===")
         self.context = context
         ##print(f" {context.area=}")
         winrgn = context.area.regions[-1]
-        self.winStart = S = Vector((winrgn.x, winrgn.y))
-        self.winEnd = E = self.winStart + Vector((winrgn.width, winrgn.height))
+        self.win_start = S = Vector((winrgn.x, winrgn.y))
+        self.win_end = E = self.win_start + Vector(
+            (winrgn.width, winrgn.height)
+        )
         ##print("win @", fv(S), fv(E))
         if sim:
             if sim.state != STOPPED:
@@ -2880,8 +2802,8 @@ class FieldOperator(bpy.types.Operator):
                 sim.operator.cancel(context)
         self.sim = Sim(context)
         self.sim.operator = self
-        self.probeDrag = None
-        self.startTimer()
+        self.probe_drag = None
+        self.start_timer()
         return {'RUNNING_MODAL'}
 
     def execute(self, context):
@@ -2897,7 +2819,7 @@ class FieldOperator(bpy.types.Operator):
             sim.send('Ex', check=False)
             s.close()
         if self.timer:
-            self.stopTimer()
+            self.stop_timer()
         ##print(f"sim {id(sim)} cancel: state=0")
         sim.state = STOPPED
         scn.frame_end = scn.frame_current
@@ -2906,10 +2828,7 @@ class FieldOperator(bpy.types.Operator):
         return {'CANCELLED'}
 
 
-# ==============================================================================
-
-
-def cleanTmps():
+def clean_tmps():
     """Remove all probe-generated objects and images"""
 
     tmpc = bpy.data.collections.get('Tmp')
@@ -2934,7 +2853,7 @@ class FieldCleanOperator(bpy.types.Operator):
 
     def invoke(self, context, event):
         print("Clean-FDTD invoke")
-        cleanTmps()
+        clean_tmps()
         return {'FINISHED'}
 
 
@@ -2979,7 +2898,7 @@ class FieldPlotOperator(bpy.types.Operator):
         if not sim:
             print("FDTD hasn't been run")
             return {'FINISHED'}
-        Probe.plotAllSetUp()
+        Probe.plot_all_set_up()
         for block in sim.blocks:
             if type(block) == Probe:
                 ob = block.ob
@@ -2989,14 +2908,11 @@ class FieldPlotOperator(bpy.types.Operator):
 
     def modal(self, context, event):
         # wait for Cmd key to be released, or plot window messes oskey state
-        if isLinux or (event.type == 'OSKEY' and event.value == 'RELEASE'):
+        if is_linux or (event.type == 'OSKEY' and event.value == 'RELEASE'):
             print("finishing plot")
-            Probe.plotAllFinish()
+            Probe.plot_all_finish()
             return {'FINISHED'}
         return {'PASS_THROUGH'}
-
-
-# ==============================================================================
 
 
 class FieldCenterOperator(bpy.types.Operator):
@@ -3012,9 +2928,6 @@ class FieldCenterOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 
-# ==============================================================================
-
-
 class FieldObjectPanel(bpy.types.Panel):
     """Creates a FDTD Panel in the Object properties window"""
 
@@ -3028,13 +2941,13 @@ class FieldObjectPanel(bpy.types.Panel):
         layout = self.layout
         scene = context.scene
         ob = context.object
-        fob = getFieldsOb(bpy.context, create=False)
+        fob = get_fields_ob(bpy.context, create=False)
         layout.prop_search(
-            ob, "blockType", scene, "blockTypes", text="Block type"
+            ob, "blockType", scene, "block_types", text="Block type"
         )
         bt = ob.blockType
         if bt:
-            blockClasses[bt].drawProps(ob, layout, scene)
+            block_classes[bt].draw_props(ob, layout, scene)
         else:
             if ob.material_slots:
                 mat = ob.material_slots[0]
@@ -3068,16 +2981,13 @@ class FieldObjectPanel(bpy.types.Panel):
         layout.operator("fdtd.center")
 
 
-def populateTypes(scene):
-    bpy.app.handlers.depsgraph_update_pre.remove(populateTypes)
-    scene.blockTypes.clear()
-    for k, block in blockClasses.items():
-        scene.blockTypes.add().name = k
-        if hasattr(block, 'populateTypes'):
-            block.populateTypes(scene)
-
-
-# ==============================================================================
+def populate_types(scene):
+    bpy.app.handlers.depsgraph_update_pre.remove(populate_types)
+    scene.block_types.clear()
+    for k, block in block_classes.items():
+        scene.block_types.add().name = k
+        if hasattr(block, 'populate_types'):
+            block.populate_types(scene)
 
 
 class FieldMatPanel(bpy.types.Panel):
@@ -3100,12 +3010,12 @@ class FieldMatPanel(bpy.types.Panel):
     )
 
     @classmethod
-    def createTypes(cls):
+    def create_types(cls):
         for key, value in cls.__annotations__.items():
             setattr(bpy.types.Material, key, value)
 
     @classmethod
-    def delTypes(cls):
+    def del_types(cls):
         for key in cls.props.keys():
             delattr(bpy.types.Material, key)
 
@@ -3115,7 +3025,7 @@ class FieldMatPanel(bpy.types.Panel):
         ob = context.object
         if ob.material_slots:
             mat = ob.material_slots[0].material
-            if ob.blockType in MatBlock.mtypeCodes.keys():
+            if ob.blockType in MatBlock.mtype_codes.keys():
                 layout.prop(mat, 'mur', text="Relative Permeability µr")
                 layout.prop(mat, 'epr', text="Relative Permittivity εr")
                 layout.prop(mat, 'sige', text="Conductivity σE")
@@ -3137,13 +3047,10 @@ class FieldMatPanel(bpy.types.Panel):
                 box.label(text=f"   = {V.length:g} {units}")
 
 
-# ==============================================================================
-# Register.
-
 addon_keymaps = []
 wm = bpy.context.window_manager
 
-operatorsPanels = (
+operators_panels = (
     FieldOperator,
     FieldCleanOperator,
     FieldPauseOperator,
@@ -3155,7 +3062,7 @@ operatorsPanels = (
 
 
 def register():
-    for c in operatorsPanels:
+    for c in operators_panels:
         bpy.utils.register_class(c)
 
     # assign Cmd-R shortcut to 'Run FDTD', etc.
@@ -3168,19 +3075,19 @@ def register():
     km.keymap_items.new("fdtd.pause", 'P', 'PRESS')
     addon_keymaps.append(km)
 
-    bpy.types.Scene.blockTypes = bp.CollectionProperty(
+    bpy.types.Scene.block_types = bp.CollectionProperty(
         type=bpy.types.PropertyGroup
     )
 
-    for k, block in blockClasses.items():
-        if hasattr(block, 'registerTypes'):
-            block.registerTypes()
+    for k, block in block_classes.items():
+        if hasattr(block, 'register_types'):
+            block.register_types()
     bpy.types.Object.blockType = bp.StringProperty()
-    bpy.app.handlers.depsgraph_update_pre.append(populateTypes)
+    bpy.app.handlers.depsgraph_update_pre.append(populate_types)
 
-    for cls in blockClasses.values():
-        cls.createTypes()
-    FieldMatPanel.createTypes()
+    for cls in block_classes.values():
+        cls.create_types()
+    FieldMatPanel.create_types()
 
 
 def unregister():
@@ -3190,14 +3097,14 @@ def unregister():
     for km in addon_keymaps:
         wm.keyconfigs.addon.keymaps.remove(km)
     addon_keymaps.clear()
-    del bpy.types.Scene.blockTypes
+    del bpy.types.Scene.block_types
     del bpy.types.Object.blockType
-    for cls in blockClasses.values():
-        cls.delTypes()
-    for k, block in blockClasses.items():
-        if hasattr(block, 'unregisterTypes'):
-            block.unregisterTypes()
-    FieldMatPanel.delTypes()
+    for cls in block_classes.values():
+        cls.del_types()
+    for k, block in block_classes.items():
+        if hasattr(block, 'unregister_types'):
+            block.unregister_types()
+    FieldMatPanel.del_types()
     print("unregister done.")
 
 
