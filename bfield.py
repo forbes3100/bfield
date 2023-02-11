@@ -1405,13 +1405,13 @@ class Probe(Block):
                 f"should be {nix}x{niy}"
             )
 
-    def probe_plane_frame_handler(self, wm, depsgraph):
+    def probe_plane_frame_handler(self, scene, depsgraph):
         """Timeline frame changed: update probe from history"""
         data = self.history.get(scene.frame_current)
         if not data is None:
             self.set_plane_texture(data)
 
-    def probe_value_frame_handler(self, wm, depsgraph):
+    def probe_value_frame_handler(self, scene, depsgraph):
         data = self.history.get(scene.frame_current)
         ##print("probeValueFrHand:", self.ob.name, scn.frame_current, data)
         if not data is None:
@@ -2597,7 +2597,7 @@ class Sim:
             blf.draw(font_id, "")
             self.last_pos_meas = None
 
-    def frame_handler(self, wm, depsgraph):
+    def frame_handler(self, scene, depsgraph):
         ##print(f"frame_handler {id(self)}")
         self.area3d.tag_redraw()  # update status line
 
