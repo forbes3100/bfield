@@ -472,11 +472,11 @@ class MatBlock(Block):
         # send (first) block object's definition to simulator
         cmd = (
             f"B{mtype} {name} {mat.name} {Bs.x:g} "
-            f"{Be.x:g} {Bs.y:g} {Be.y:g} {Bs.z:g} {Be.z:g}\n"
+            f"{Be.x:g} {Bs.y:g} {Be.y:g} {Bs.z:g} {Be.z:g}"
         )
         self.sim.send(cmd)
         if ob.verbose > 0:
-            print(cmd, end='')
+            print(cmd)
         selection = [(Bs, Be)]
         arrayi = 1
 
@@ -509,11 +509,11 @@ class MatBlock(Block):
                             cmd = (
                                 f"B{mtype} {nameo} {mat.name} "
                                 f"{Bso.x:g} {Beo.x:g} {Bso.y:g} "
-                                f"{Beo.y:g} {Bso.z:g} {Beo.z:g}\n"
+                                f"{Beo.y:g} {Bso.z:g} {Beo.z:g}"
                             )
                             self.sim.send(cmd)
                             if ob.verbose > 0:
-                                print(cmd, end='')
+                                print(cmd)
                             new_selection.append((Bso, Beo))
                             arrayi += 1
                     selection.extend(new_selection)
@@ -695,7 +695,7 @@ class MeshMatBlock(MatBlock):
         nx = max(nx, 16)
         sim.send(
             f"HI {ob.name} {mat.name} {x-r:g} {x+r:g} {y-r:g} {y+r:g} "
-            f"{Bs.z:g} {Be.z:g} {nx} {nz}\n"
+            f"{Bs.z:g} {Be.z:g} {nx} {nz}"
         )
         if ob.verbose > 0:
             print("MeshMatBlock.send_def_gen", ob.name, "done.")
@@ -739,7 +739,7 @@ class LayerMatBlock(Block):
         fmat_name = ob.get('fmat_name')
         self.sim.send(
             f"LI {ob.name} {fmat_name} {Bs.x:g} {Be.x:g} "
-            f"{Bs.y:g} {Be.y:g} {Bs.z:g} {Be.z:g} {img_file_path}\n"
+            f"{Bs.y:g} {Be.y:g} {Bs.z:g} {Be.z:g} {img_file_path}"
         )
         yield
 
@@ -795,9 +795,9 @@ class FieldsBlock(MatBlock):
         Bs, Be = self.Bs, self.Be
         mat = self.get_field_mat()
         sim = self.sim
-        sim.send("A units mm\n")
-        sim.send(f"A usPoll {sim.usPoll}\n")
-        sim.send(f"A verbose {sim.verbose}\n")
+        sim.send("A units mm")
+        sim.send(f"A usPoll {sim.usPoll}")
+        sim.send(f"A verbose {sim.verbose}")
         cmd = (
             f"F {ob.name} {mat.name} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
             f"{Bs.z:g} {Be.z:g} {sim.dx:g} 1 {sim.pml_border}"
@@ -944,7 +944,7 @@ class SubSpaceBlock(MatBlock):
         mat = self.get_field_mat()
         cmd = (
             f"G {ob.name} {mat.name} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
-            f"{Bs.z:g} {Be.z:g} {ob.parent.name}\n"
+            f"{Bs.z:g} {Be.z:g} {ob.parent.name}"
         )
         if sim.verbose > 1:
             print(cmd)
@@ -1769,7 +1769,7 @@ class Probe(Block):
         cmd = (
             f"{'PU'[update]} {ob.name} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
             f"{Bs.z:g} {Be.z:g} {field_name} {disp_type[0]} "
-            f"{disp_scale:g} {ob.p_sfactor} {ob.p_verbose}\n"
+            f"{disp_scale:g} {ob.p_sfactor} {ob.p_verbose}"
         )
         if ob.p_verbose > 1:
             print(cmd)
@@ -2398,7 +2398,7 @@ class Sim:
         self.fmats.append(m)
         if ob.verbose > 1:
             print(" adding fmat", m.name)
-        self.send(f"M {m.name} {m.mur:g} {m.epr:g} {m.sige:g} 0\n")
+        self.send(f"M {m.name} {m.mur:g} {m.epr:g} {m.sige:g} 0")
 
     def send_defs_gen(self):
         ##print("Sim.send_defs_gen start")
@@ -2483,7 +2483,7 @@ class Sim:
             self.start_fdtd()
 
         # tell simulator to chdir to blender file's directory
-        cmd = f"C {cwd}\n"
+        cmd = f"C {cwd}"
         if self.verbose > 1:
             print(cmd)
         self.send(cmd)

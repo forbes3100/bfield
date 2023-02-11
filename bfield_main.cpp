@@ -297,8 +297,6 @@ void server() {
                 fd = (int)evp->ident;
                 char text[256];
                 size_t r = recv(fd, text, sizeof(text)-1, 0);
-                if (r > 0 && text[r-1] == '\n')
-                    r--;
                 text[r] = '\0';
                 //if ((osp && osp->verbose > 0) || mode == IDLE)
                 if (osp && osp->verbose > 0)
