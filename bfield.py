@@ -2498,7 +2498,7 @@ class Sim:
         if self.active_ob:
             self.active_ob.select_set(True)
         self.dt = 0.5 * self.dx * mm / c0
-        print(f"dx = {self.dx:3f}, dt = {self.dt:5g}")
+        print(f"dx = {self.dx:0.3f} mm, dt = {self.dt / 1e-12:0.3g} ps")
         try:
             self.send('R')
         except IOError:
@@ -2616,6 +2616,15 @@ class FieldOperator(bpy.types.Operator):
     def start_timer(self):
         """Timer routines for modal operator"""
 
+        # Extra timers running in Blender are a pain. This happens
+        # whenever bfield.py crashes while running, and there’s no way
+        # to remove all previous timers, nor to distinguish which
+        # timer sent the ‘TIMER’ event to compare to. Nor is there a
+        # way to change the rate of the current timer, which would be
+        # useful to speed up the initialization period where there are
+        # a bunch of yields but the rate doesn’t need to be limited
+        # then.
+
         sim = self.sim
         if not sim:
             return
@@ -2721,6 +2730,7 @@ class FieldOperator(bpy.types.Operator):
                     return self.cancel(context)
                     # refresh viewport to update status line
                     # note: kills context.area, used in on_screen_init
+                    # also prints "Warning: 1 x Draw window and swap..."
                     bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
             elif event.type == 'ESC':
@@ -2913,6 +2923,72 @@ class FieldCenterOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 
+def export_scene_x3d():
+    # unhide all collections and objects, keeping lists
+    hidden = []
+    hidden_vp = []
+    coll_hidden_vp = []
+    for coll in bpy.data.collections:
+        if coll.hide_viewport:
+            coll_hidden_vp.append(coll)
+            coll.hide_viewport = False
+    for ob in bpy.data.objects:
+        if ob.hide_get():
+            hidden.append(ob)
+            ob.hide_set(False)
+        if ob.hide_viewport:
+            hidden_vp.append(ob)
+            ob.hide_viewport = False
+
+    # refresh viewport to update status line
+    bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+
+    # export as x3d file
+    dir = os.path.join(cwd, 'scenes_x3d')
+    if not os.path.exists(dir):
+        os.mkdir(dir)
+    base = os.path.basename(bpy.data.filepath)
+    base = os.path.splitext(base)[0]
+    name = f"{base}_{bpy.context.scene.name}.x3d"
+    ##print(f"Writing {name} to {dir}")
+    filepath = os.path.join(dir, name)
+    bpy.ops.export_scene.x3d(filepath=filepath)
+
+    # rehide hidden collections and objects
+    for ob in hidden:
+        ob.hide_set(True)
+    for ob in hidden_vp:
+        ob.hide_viewport = True
+    for coll in coll_hidden_vp:
+        coll.hide_viewport = True
+
+
+class FieldExportOperator(bpy.types.Operator):
+    """Export scene as .x3d file"""
+
+    bl_idname = "fdtd.export"
+    bl_label = "Export scene as x3d"
+
+    def invoke(self, context, event):
+        export_scene_x3d()
+        return {'FINISHED'}
+
+
+class FieldExportAllOperator(bpy.types.Operator):
+    """Export all scenes as .x3d files"""
+
+    bl_idname = "fdtd.export_all"
+    bl_label = "Export all as x3ds"
+
+    def invoke(self, context, event):
+        cur_scene = bpy.context.window.scene
+        for scene in bpy.data.scenes:
+            bpy.context.window.scene = scene
+            export_scene_x3d()
+        bpy.context.window.scene = cur_scene
+        return {'FINISHED'}
+
+
 class FieldObjectPanel(bpy.types.Panel):
     """Creates a FDTD Panel in the Object properties window"""
 
@@ -2964,6 +3040,8 @@ class FieldObjectPanel(bpy.types.Panel):
 
         layout.operator("fdtd.clean")
         layout.operator("fdtd.center")
+        layout.operator("fdtd.export")
+        layout.operator("fdtd.export_all")
 
 
 def populate_types(scene):
@@ -3041,6 +3119,8 @@ operators_panels = (
     FieldPauseOperator,
     FieldPlotOperator,
     FieldCenterOperator,
+    FieldExportOperator,
+    FieldExportAllOperator,
     FieldObjectPanel,
     FieldMatPanel,
 )
