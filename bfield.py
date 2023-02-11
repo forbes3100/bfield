@@ -299,10 +299,10 @@ def get_fields_ob(context, create=True):
 
 class Block:
     props = {
-        "snap": bp.BoolProperty(
+        'snap': bp.BoolProperty(
             description="Snap bounds to sim grid", default=False
         ),
-        "snapped_name": bp.StringProperty(
+        'snapped_name': bp.StringProperty(
             description="Name of snapped-to-sim-grid copy of this object"
         ),
     }
@@ -410,7 +410,7 @@ class Block:
                 if ob.verbose > 1:
                     print(sob.name, "new Bs, Be=", fv(Bs), fv(Be))
 
-                if ob.blockType == 'PROBE':
+                if ob.block_type == 'PROBE':
                     # force probe to regenerate any image-- size may change
                     if sob.material_slots:
                         sob.material_slots[0].material = None
@@ -461,7 +461,7 @@ class MatBlock(Block):
             print("MatBlock.send_def_gen")
         Bs, Be = self.Bs, self.Be
         mat = self.get_field_mat()
-        mtype = self.mtype_codes[ob['blockType']]
+        mtype = self.mtype_codes[ob['block_type']]
 
         # if any array modifiers used, start with 0 index
         name = ob.name
@@ -706,8 +706,8 @@ class LayerMatBlock(Block):
     """An image-defined layer material in the sim world"""
 
     props = {
-        "fmat_name": bp.StringProperty(description="FDTD material"),
-        "snap": bp.BoolProperty(
+        'fmat_name': bp.StringProperty(description="FDTD material"),
+        'snap': bp.BoolProperty(
             description="Snap bounds to sim grid", default=False
         ),
     }
@@ -746,21 +746,21 @@ class LayerMatBlock(Block):
 
 class FieldsBlock(MatBlock):
     props = {
-        "dx": bp.FloatProperty(
+        'dx': bp.FloatProperty(
             description="Grid cell spacing, mm", min=0.0, default=1.0
         ),
-        "stop_ps": bp.FloatProperty(
+        'stop_ps': bp.FloatProperty(
             description="When to stop sim, in ps", min=0.0, default=0.0
         ),
-        "usPoll": bp.IntProperty(description="us/Step", min=0, default=50),
-        "msRate": bp.IntProperty(description="ms/Update", min=0, default=500),
-        "rec": bp.BoolProperty(
+        'us_poll': bp.IntProperty(description="us/Step", min=0, default=50),
+        'ms_rate': bp.IntProperty(description="ms/Update", min=0, default=500),
+        'rec': bp.BoolProperty(
             description="Record as animation", default=True
         ),
-        "pml_border": bp.IntProperty(
+        'pml_border': bp.IntProperty(
             description="PML border width, cells", min=0, default=4
         ),
-        "verbose": bp.IntProperty(
+        'verbose': bp.IntProperty(
             description="Sim verbosity level, 0-3", min=0, default=0
         ),
     }
@@ -780,8 +780,8 @@ class FieldsBlock(MatBlock):
                 f"{ma.floor(D.z/dx)}"
             )
         col = spit.column()
-        col.prop(ob, 'usPoll', text="µs/Step")
-        col.prop(ob, 'msRate', text="ms/Up")
+        col.prop(ob, 'us_poll', text="µs/Step")
+        col.prop(ob, 'ms_rate', text="ms/Up")
         col.prop(ob, 'pml_border', text="PML cells")
         col.prop(ob, 'verbose', text="Verbosity")
         col.prop(ob, 'rec', text="Record")
@@ -796,7 +796,7 @@ class FieldsBlock(MatBlock):
         mat = self.get_field_mat()
         sim = self.sim
         sim.send("A units mm")
-        sim.send(f"A usPoll {sim.usPoll}")
+        sim.send(f"A us_poll {sim.us_poll}")
         sim.send(f"A verbose {sim.verbose}")
         cmd = (
             f"F {ob.name} {mat.name} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
@@ -811,13 +811,13 @@ class Resistor(MatBlock):
     """A block of resistive material, creates the material if needed"""
 
     props = {
-        "resistance": bp.FloatProperty(
+        'resistance': bp.FloatProperty(
             description="Resistance", min=0.0, default=1.0
         ),
-        "res_units": bp.StringProperty(
+        'res_units': bp.StringProperty(
             description="units for resistance", default='ohms'
         ),
-        "axis": bp.StringProperty(
+        'axis': bp.StringProperty(
             description="axis of resistance (X/Y/Z)", default='X'
         ),
     }
@@ -873,13 +873,13 @@ class Capacitor(MatBlock):
     """
 
     props = {
-        "capacitance": bp.FloatProperty(
+        'capacitance': bp.FloatProperty(
             description="Capacitance", min=0.0, default=1.0
         ),
-        "cap_units": bp.StringProperty(
+        'cap_units': bp.StringProperty(
             description="units for capacitance", default='pf'
         ),
-        "axis": bp.StringProperty(
+        'axis': bp.StringProperty(
             description="axis of capacitor (X/Y/Z)", default='X'
         ),
     }
@@ -955,40 +955,40 @@ class SubSpaceBlock(MatBlock):
 
 class Source(Block):
     props = {
-        "s_axis": bp.StringProperty(description="Axis of positive voltage"),
-        "s_excitation": bp.StringProperty(description="Excitation"),
-        "s_function": bp.StringProperty(description="Function"),
-        "s_hard": bp.BoolProperty(description="Hard source", default=False),
-        "s_resistance": bp.FloatProperty(
+        's_axis': bp.StringProperty(description="Axis of positive voltage"),
+        's_excitation': bp.StringProperty(description="Excitation"),
+        's_function': bp.StringProperty(description="Function"),
+        's_hard': bp.BoolProperty(description="Hard source", default=False),
+        's_resistance': bp.FloatProperty(
             description="Soft source resistance (ohms)", min=0.0, default=50.0
         ),
-        "s_scale": bp.FloatProperty(
+        's_scale': bp.FloatProperty(
             description="Signal height", min=0.0, default=1.0
         ),
-        "s_tstart": bp.FloatProperty(
+        's_tstart': bp.FloatProperty(
             description="Pulse start time", min=0.0, default=0.0
         ),
-        "s_tstartUnits": bp.StringProperty(
+        's_tstart_units': bp.StringProperty(
             description="Pulse start time units", default='ps'
         ),
-        "s_trise": bp.FloatProperty(
+        's_trise': bp.FloatProperty(
             description="Pulse rise time", min=0.0, default=10.0
         ),
-        "s_triseUnits": bp.StringProperty(
+        's_trise_units': bp.StringProperty(
             description="Pulse rise time units", default='ps'
         ),
-        "s_duration": bp.FloatProperty(
+        's_duration': bp.FloatProperty(
             description="Pulse duration (after trise, before tfall)",
             min=0.0,
             default=0.0,
         ),
-        "s_durationUnits": bp.StringProperty(
+        's_duration_units': bp.StringProperty(
             description="Pulse duration units", default='sec'
         ),
-        "s_tfall": bp.FloatProperty(
+        's_tfall': bp.FloatProperty(
             description="Pulse fall time", min=0.0, default=10.0
         ),
-        "s_tfallUnits": bp.StringProperty(
+        's_tfall_units': bp.StringProperty(
             description="Pulse fall time units", default='ps'
         ),
     }
@@ -1063,21 +1063,25 @@ class Source(Block):
         if ob.s_function != 'Constant':
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_tstart', text="Start time")
-            split.prop_search(ob, 's_tstartUnits', wm, 'time_units', text="")
+            split.prop_search(ob, 's_tstart_units', wm, 'time_units', text="")
         if ob.s_function == 'Gaussian Pulse':
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_trise', text="Rise time")
-            split.prop_search(ob, 's_triseUnits', wm, 'time_units', text="")
+            split.prop_search(ob, 's_trise_units', wm, 'time_units', text="")
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_duration', text="Duration")
-            split.prop_search(ob, 's_durationUnits', wm, 'time_units', text="")
+            split.prop_search(
+                ob, 's_duration_units', wm, 'time_units', text=""
+            )
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_tfall', text="Fall time")
-            split.prop_search(ob, 's_tfallUnits', wm, 'time_units', text="")
+            split.prop_search(ob, 's_tfall_units', wm, 'time_units', text="")
         elif ob.s_function == 'Sine':
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_duration', text="Period")
-            split.prop_search(ob, 's_durationUnits', wm, 'time_units', text="")
+            split.prop_search(
+                ob, 's_duration_units', wm, 'time_units', text=""
+            )
         layout.prop(ob, 'snap', text="Snap bounds to sim grid")
         layout.prop(ob, 'verbose', text="Verbosity")
 
@@ -1144,60 +1148,60 @@ class NFmtr(ticker.Formatter):
 
 class Probe(Block):
     props = {
-        "p_field": bp.StringProperty(
+        'p_field': bp.StringProperty(
             description="Field to measure", default='Electric'
         ),
-        "p_axis": bp.StringProperty(
+        'p_axis': bp.StringProperty(
             description="Measurement axis", default='XYZ'
         ),
-        "p_axisSign": bp.IntProperty(
+        'p_axis_sign': bp.IntProperty(
             description="Measurement axis sign", default=1
         ),
-        "p_verbose": bp.IntProperty(
+        'p_verbose': bp.IntProperty(
             description="Probe verbosity level, 0-3", min=0, default=0
         ),
-        "p_shape": bp.StringProperty(
+        'p_shape': bp.StringProperty(
             description="Display shape", default='Plane'
         ),
-        "p_value": bp.FloatProperty(
+        'p_value': bp.FloatProperty(
             precision=6, description="Probe measured value"
         ),
-        "p_value3": bp.FloatVectorProperty(
+        'p_value3': bp.FloatVectorProperty(
             description="Probe measured vector value"
         ),
-        "p_dispScale": bp.FloatProperty(
+        'p_disp_scale': bp.FloatProperty(
             min=0, default=256.0, description="Display scale"
         ),
-        "p_pixelRep": bp.IntProperty(
+        'p_pixel_rep': bp.IntProperty(
             min=1, default=1, description="Image pixel repeat factor"
         ),
-        "p_imageAlpha": bp.FloatProperty(
+        'p_image_alpha': bp.FloatProperty(
             description="Image transparency alpha", min=0.0, default=1.0
         ),
-        "p_sfactor": bp.IntProperty(
+        'p_sfactor': bp.IntProperty(
             description="Volume space factor, cells/sample", min=1, default=1
         ),
-        "p_log": bp.BoolProperty(
+        'p_log': bp.BoolProperty(
             description="Log scale for magnitude", default=True
         ),
-        "p_magScale": bp.FloatProperty(
+        'p_mag_scale': bp.FloatProperty(
             description="Magnitude multiplier", min=0.0, default=1.0
         ),
-        "p_sum": bp.BoolProperty(description="Sum values", default=False),
-        "p_avg": bp.BoolProperty(description="Average values", default=False),
-        "p_dispIsMesh": bp.BoolProperty(
+        'p_sum': bp.BoolProperty(description="Sum values", default=False),
+        'p_avg': bp.BoolProperty(description="Average values", default=False),
+        'p_disp_is_mesh': bp.BoolProperty(
             description="Use mesh object for in-world chart", default=False
         ),
-        "p_dispIsPlot": bp.BoolProperty(
+        'p_disp_is_plot': bp.BoolProperty(
             description="Use external MatPlotLib for chart", default=True
         ),
-        "p_legendLoc": bp.StringProperty(
+        'p_legend_loc': bp.StringProperty(
             description="Plot legend location", default="best"
         ),
-        "p_plotScale": bp.FloatProperty(
+        'p_plot_scale': bp.FloatProperty(
             description="chart scale multiplier", min=0.0, default=1.0
         ),
-        "p_dispColor": bp.FloatVectorProperty(
+        'p_disp_color': bp.FloatVectorProperty(
             description="Color",
             subtype='COLOR',
             size=4,
@@ -1205,7 +1209,7 @@ class Probe(Block):
             max=1.0,
             default=(0.75, 0.0, 0.8, 1.0),
         ),
-        "p_dispPos": bp.FloatProperty(
+        'p_disp_pos': bp.FloatProperty(
             min=0.0,
             max=1.0,
             description="Relative position in chart",
@@ -1295,15 +1299,15 @@ class Probe(Block):
             layout.prop_search(ob, 'p_axis', wm, 'p_axes', text="Axis")
             layout.prop_search(ob, 'p_field', wm, fields, text="Field")
             row = layout.row()
-            row.prop(ob, 'p_dispIsMesh', text="Use Mesh")
-            row.prop(ob, 'p_dispIsPlot', text="MatPlotLib")
+            row.prop(ob, 'p_disp_is_mesh', text="Use Mesh")
+            row.prop(ob, 'p_disp_is_plot', text="MatPlotLib")
             row = layout.row()
             row.prop(ob, 'p_sum', text="Sum values")
             row.prop(ob, 'p_verbose', text="Verbosity")
-            if not (ob.p_dispIsMesh or ob.p_dispIsPlot):
+            if not (ob.p_disp_is_mesh or ob.p_disp_is_plot):
                 split = layout.split(factor=0.5)
-                split.row().prop(ob, 'p_dispPos', text="Pos")
-                split.row().prop(ob, 'p_dispColor', text="Color")
+                split.row().prop(ob, 'p_disp_pos', text="Pos")
+                split.row().prop(ob, 'p_disp_color', text="Color")
             box = layout.box()
             units = self.fieldUnits[ob.p_field[0]]
             box.label(text=f"Measurement ({units})")
@@ -1311,10 +1315,10 @@ class Probe(Block):
             self.measurement_attr_name = value
             self.measurement_units = units
             box.row().prop(ob, value, text="")
-            layout.prop(ob, 'p_plotScale', text="Plot Scale")
+            layout.prop(ob, 'p_plot_scale', text="Plot Scale")
             layout.prop_search(
                 ob,
-                'p_legendLoc',
+                'p_legend_loc',
                 scene,
                 'p_legendLocs',
                 text="Legend location",
@@ -1333,10 +1337,10 @@ class Probe(Block):
             layout.prop_search(ob, 'p_axis', wm, 'p_axes', text="Axis")
             layout.prop_search(ob, 'p_field', wm, fields, text="Field")
             row = layout.row()
-            row.prop(ob, 'p_dispScale', text="Brightness")
-            row.prop(ob, 'p_pixelRep', text="Repeat")
+            row.prop(ob, 'p_disp_scale', text="Brightness")
+            row.prop(ob, 'p_pixel_rep', text="Repeat")
             row = layout.row()
-            row.prop(ob, 'p_imageAlpha', text="Alpha")
+            row.prop(ob, 'p_image_alpha', text="Alpha")
             row.prop(ob, 'p_verbose', text="Verbosity")
 
         elif ob.p_shape == 'Volume':
@@ -1345,7 +1349,7 @@ class Probe(Block):
             row.prop(ob, 'p_sfactor', text="Cells/Sample")
             row.prop(ob, 'p_log', text="Log scale")
             row.prop(ob, 'p_verbose', text="Verbosity")
-            layout.prop(ob, 'p_magScale', text="Mag scale")
+            layout.prop(ob, 'p_mag_scale', text="Mag scale")
         layout.prop(ob, 'snap', text="Snap bounds to sim grid")
 
     def __init__(self, ob, sim):
@@ -1369,7 +1373,7 @@ class Probe(Block):
         img = tex.image
         if not img:
             raise ValueError(f"object {name} missing an image")
-        mag_scale, rep = ob.p_dispScale, ob.p_pixelRep
+        mag_scale, rep = ob.p_disp_scale, ob.p_pixel_rep
         nix, niy = self.nix, self.niy
         di = 0
         if (
@@ -1499,7 +1503,7 @@ class Probe(Block):
             mesh = ob.data
             name = ob.name
             mat = None
-            rep = ob.p_pixelRep
+            rep = ob.p_pixel_rep
             if len(mesh.materials) == 1:
                 mat = mesh.materials[0]
                 if mat and mat.use_nodes:
@@ -1561,7 +1565,7 @@ class Probe(Block):
                 # (0,0,0) (0,0,43) (0,60,0) (0,60,43)
 
             if mat:
-                talpha = ob.p_imageAlpha
+                talpha = ob.p_image_alpha
                 ##print(f"{ob.name}: setting image alpha to {talpha}")
                 mat.node_tree.nodes["Principled BSDF"].inputs[
                     'Alpha'
@@ -1721,13 +1725,13 @@ class Probe(Block):
         ob = self.ob
         Bs, Be = self.Bs, self.Be
         field_name = self.field_names_mag[ob.p_field]
-        ob.p_axisSign = 1
+        ob.p_axis_sign = 1
         axis = ob.p_axis
         if axis[0] == '-':
-            ob.p_axisSign = -1
+            ob.p_axis_sign = -1
             axis = ob.p_axis[1]
         disp_type = 'Vec'
-        disp_scale = ob.p_dispScale
+        disp_scale = ob.p_disp_scale
         if ob.p_shape == 'Plane':
             if axis == 'XYZ':
                 disp_type = 'RGB'
@@ -1739,7 +1743,7 @@ class Probe(Block):
                 ##self.n = self.n + 1  # voltage sources include edges ???
         elif ob.p_shape == 'Point':
             disp_type = 'Mag'
-            disp_scale = ob.p_plotScale
+            disp_scale = ob.p_plot_scale
             if axis == 'XYZ':
                 disp_type = 'Vec'
             if field_name == 'V':
@@ -1884,7 +1888,7 @@ class Probe(Block):
                     # Voltage should only depend on E and dx.
                     if ob.p_verbose > 1:
                         print("Point", ob.name, "v=", v, "dx=", dx)
-                    v *= -dx * ob.p_axisSign
+                    v *= -dx * ob.p_axis_sign
 
                 ob.p_value = v
 
@@ -1950,7 +1954,7 @@ class Probe(Block):
                             HEr.append((-x / nx, -y / ny, -z / nz))
                 HE = np.array(HEr) * 32768 / 100.0
 
-            log_mag, mag_scale = ob.p_log, ob.p_magScale
+            log_mag, mag_scale = ob.p_log, ob.p_mag_scale
             for i, arrow in enumerate(self.arrows):
                 arrow.rotation_euler.zero()
                 pr = False
@@ -2071,12 +2075,12 @@ class Probe(Block):
 
             marker = '.' if len(ys) < 50 else None
             label = ob.name
-            if ob.p_plotScale != 1:
-                label = f"{label} * {ob.p_plotScale:g}"
+            if ob.p_plot_scale != 1:
+                label = f"{label} * {ob.p_plot_scale:g}"
             plt.plot(
                 xs.copy(), ys.copy(), marker=marker, color=color, label=label
             )
-            plt.legend(loc=ob.p_legendLoc)
+            plt.legend(loc=ob.p_legend_loc)
             fn = ob.p_field
             fig.ylabel = f"{fn.capitalize()} (%s{self.fieldUnits[fn[0]]})"
             fig.max_x = max(xs[-1], fig.max_x)
@@ -2348,7 +2352,7 @@ class Sim:
             if fob.verbose > 1:
                 print("createBlocks object", ob.name)
             block = None
-            bt = ob.get('blockType')
+            bt = ob.get('block_type')
 
             block_class = block_classes.get(bt)
             if fob.verbose > 1:
@@ -2411,7 +2415,7 @@ class Sim:
             m = None
             if link == 'DATA':
                 if ob.data and ob.data.materials:
-                    if ob.blockType == 'MATLAYER':
+                    if ob.block_type == 'MATLAYER':
                         m = bpy.data.materials.get(ob.fmat_name)
                     else:
                         m = ob.data.materials[0]
@@ -2626,7 +2630,7 @@ class FieldOperator(bpy.types.Operator):
             return
         context = self.context
         context.window_manager.modal_handler_add(self)
-        rate = sim.fields_ob.get('msRate') or 200
+        rate = sim.fields_ob.get('ms_rate') or 200
         rate = max(min(rate, 1000), 10)
         print(f"starting {rate} ms/tick timer")
         self.timer = context.window_manager.event_timer_add(
@@ -2646,7 +2650,7 @@ class FieldOperator(bpy.types.Operator):
         if ob and ob.p_verbose > 0:
             print("dyn_probe:", action, name)
         sim = self.sim
-        if ob and ob.get('blockType') == 'PROBE':
+        if ob and ob.get('block_type') == 'PROBE':
             pblock = sim.find_block(ob)
             ##print("found block", pblock)
             if pblock:
@@ -2710,13 +2714,13 @@ class FieldOperator(bpy.types.Operator):
             if sim.state >= RUNNING:
                 ob = bpy.context.object
                 if event.type == 'G':
-                    if ob.blockType == 'PROBE' and ob.p_shape == 'Point':
+                    if ob.block_type == 'PROBE' and ob.p_shape == 'Point':
                         self.lock_axis = None
                         self.dyn_probe(event, 'START')
                     return {'PASS_THROUGH'}
 
                 elif event.type in 'XYZ':
-                    if ob.blockType == 'PROBE' and ob.p_shape == 'Point':
+                    if ob.block_type == 'PROBE' and ob.p_shape == 'Point':
                         self.lock_axis = ord(event.type) - ord('X')
                         # return {'RUNNING_MODAL'}
                     return {'PASS_THROUGH'}
@@ -3001,9 +3005,9 @@ class FieldObjectPanel(bpy.types.Panel):
         ob = context.object
         fob = get_fields_ob(bpy.context, create=False)
         layout.prop_search(
-            ob, "blockType", wm, "block_types", text="Block type"
+            ob, "block_type", wm, "block_types", text="Block type"
         )
-        bt = ob.blockType
+        bt = ob.block_type
         if bt:
             block_classes[bt].draw_props(ob, layout, scene)
         else:
@@ -3018,7 +3022,7 @@ class FieldObjectPanel(bpy.types.Panel):
                     r = ob.scale.x / ap.p_sfactor
                     if ap.p_log:
                         r = 10 ** (r * 4 - 6)
-                    r /= ap.p_magScale
+                    r /= ap.p_mag_scale
                     V.x *= r
                     V.y *= r
                     V.z *= r
@@ -3085,7 +3089,7 @@ class FieldMatPanel(bpy.types.Panel):
         ob = context.object
         if ob.material_slots:
             mat = ob.material_slots[0].material
-            if ob.blockType in MatBlock.mtype_codes.keys():
+            if ob.block_type in MatBlock.mtype_codes.keys():
                 layout.prop(mat, 'mur', text="Relative Permeability µr")
                 layout.prop(mat, 'epr', text="Relative Permittivity εr")
                 layout.prop(mat, 'sige', text="Conductivity σE")
@@ -3098,7 +3102,7 @@ class FieldMatPanel(bpy.types.Panel):
                 ap = ob.parent
                 if ap.p_log:
                     r = 10 ** (r * 4 - 6)
-                r /= ap.p_magScale
+                r /= ap.p_mag_scale
                 V.x *= r
                 V.y *= r
                 V.z *= r
@@ -3144,7 +3148,7 @@ def register():
     for k, block in block_classes.items():
         if hasattr(block, 'register_types'):
             block.register_types()
-    bpy.types.Object.blockType = bp.StringProperty()
+    bpy.types.Object.block_type = bp.StringProperty()
     populate_types()
 
     for cls in block_classes.values():
@@ -3160,7 +3164,7 @@ def unregister():
         wm.keyconfigs.addon.keymaps.remove(km)
     addon_keymaps.clear()
     del bpy.types.WindowManager.block_types
-    del bpy.types.Object.blockType
+    del bpy.types.Object.block_type
     for cls in block_classes.values():
         cls.del_types()
     for k, block in block_classes.items():
