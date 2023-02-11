@@ -1063,27 +1063,21 @@ class Source(Block):
         if ob.s_function != 'Constant':
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_tstart', text="Start time")
-            split.prop_search(
-                ob, 's_tstartUnits', wm, 'time_units', text=""
-            )
+            split.prop_search(ob, 's_tstartUnits', wm, 'time_units', text="")
         if ob.s_function == 'Gaussian Pulse':
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_trise', text="Rise time")
             split.prop_search(ob, 's_triseUnits', wm, 'time_units', text="")
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_duration', text="Duration")
-            split.prop_search(
-                ob, 's_durationUnits', wm, 'time_units', text=""
-            )
+            split.prop_search(ob, 's_durationUnits', wm, 'time_units', text="")
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_tfall', text="Fall time")
             split.prop_search(ob, 's_tfallUnits', wm, 'time_units', text="")
         elif ob.s_function == 'Sine':
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_duration', text="Period")
-            split.prop_search(
-                ob, 's_durationUnits', wm, 'time_units', text=""
-            )
+            split.prop_search(ob, 's_durationUnits', wm, 'time_units', text="")
         layout.prop(ob, 'snap', text="Snap bounds to sim grid")
         layout.prop(ob, 'verbose', text="Verbosity")
 
@@ -1295,9 +1289,7 @@ class Probe(Block):
     def draw_props(self, ob, layout, scene):
         wm = bpy.context.window_manager
         fields = ('p_fields', 'p_fieldsMag')[ob.p_axis == 'Magnitude']
-        layout.prop_search(
-            ob, 'p_shape', wm, 'p_shapes', text="Display Shape"
-        )
+        layout.prop_search(ob, 'p_shape', wm, 'p_shapes', text="Display Shape")
 
         if ob.p_shape == 'Point':
             layout.prop_search(ob, 'p_axis', wm, 'p_axes', text="Axis")
