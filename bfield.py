@@ -824,10 +824,11 @@ class Resistor(MatBlock):
 
     @classmethod
     def draw_props(self, ob, layout, scene):
+        wm = bpy.context.window_manager
         split = layout.split(factor=0.6)
         split.row().prop(ob, 'resistance')
-        split.prop_search(ob, 'res_units', scene, 'res_units', text="")
-        layout.prop_search(ob, 'axis', scene, 's_axes', text="Axis")
+        split.prop_search(ob, 'res_units', wm, 'res_units', text="")
+        layout.prop_search(ob, 'axis', wm, 's_axes', text="Axis")
         layout.prop(ob, 'verbose', text="Verbosity")
 
     def prepare_gen(self):
@@ -885,10 +886,11 @@ class Capacitor(MatBlock):
 
     @classmethod
     def draw_props(self, ob, layout, scene):
+        wm = bpy.context.window_manager
         split = layout.split(factor=0.6)
         split.row().prop(ob, 'capacitance')
-        split.prop_search(ob, 'cap_units', scene, 'cap_units', text="")
-        layout.prop_search(ob, 'axis', scene, 's_axes', text="Axis")
+        split.prop_search(ob, 'cap_units', wm, 'cap_units', text="")
+        layout.prop_search(ob, 'axis', wm, 's_axes', text="Axis")
         layout.prop(ob, 'verbose', text="Verbosity")
 
     def prepare_gen(self):
@@ -993,93 +995,94 @@ class Source(Block):
 
     @classmethod
     def register_types(self):
-        bpy.types.Scene.s_excitations = bp.CollectionProperty(
+        bpy.types.WindowManager.s_excitations = bp.CollectionProperty(
             type=bpy.types.PropertyGroup
         )
-        bpy.types.Scene.s_axes = bp.CollectionProperty(
+        bpy.types.WindowManager.s_axes = bp.CollectionProperty(
             type=bpy.types.PropertyGroup
         )
-        bpy.types.Scene.s_functions = bp.CollectionProperty(
+        bpy.types.WindowManager.s_functions = bp.CollectionProperty(
             type=bpy.types.PropertyGroup
         )
-        bpy.types.Scene.time_units = bp.CollectionProperty(
+        bpy.types.WindowManager.time_units = bp.CollectionProperty(
             type=bpy.types.PropertyGroup
         )
-        bpy.types.Scene.res_units = bp.CollectionProperty(
+        bpy.types.WindowManager.res_units = bp.CollectionProperty(
             type=bpy.types.PropertyGroup
         )
-        bpy.types.Scene.cap_units = bp.CollectionProperty(
+        bpy.types.WindowManager.cap_units = bp.CollectionProperty(
             type=bpy.types.PropertyGroup
         )
 
     @classmethod
     def unregister_types(self):
-        del bpy.types.Scene.s_excitations
-        del bpy.types.Scene.s_axes
-        del bpy.types.Scene.s_functions
-        del bpy.types.Scene.time_units
-        del bpy.types.Scene.res_units
-        del bpy.types.Scene.cap_units
+        del bpy.types.WindowManager.s_excitations
+        del bpy.types.WindowManager.s_axes
+        del bpy.types.WindowManager.s_functions
+        del bpy.types.WindowManager.time_units
+        del bpy.types.WindowManager.res_units
+        del bpy.types.WindowManager.cap_units
 
     @classmethod
-    def populate_types(self, scene):
-        scene.s_excitations.clear()
+    def populate_types(self, wm):
+        wm.s_excitations.clear()
         for k in ('Voltage', 'Current', 'Electrical', 'Magnetic'):
-            scene.s_excitations.add().name = k
-        scene.s_axes.clear()
+            wm.s_excitations.add().name = k
+        wm.s_axes.clear()
         for k in (' X', ' Y', ' Z', '-X', '-Y', '-Z'):
-            scene.s_axes.add().name = k
-        scene.s_functions.clear()
+            wm.s_axes.add().name = k
+        wm.s_functions.clear()
         for k in ('Gaussian Pulse', 'Sine', 'Constant'):
-            scene.s_functions.add().name = k
-        scene.time_units.clear()
+            wm.s_functions.add().name = k
+        wm.time_units.clear()
         for k in time_units.keys():
-            scene.time_units.add().name = k
-        scene.res_units.clear()
+            wm.time_units.add().name = k
+        wm.res_units.clear()
         for k in res_units.keys():
-            scene.res_units.add().name = k
-        scene.cap_units.clear()
+            wm.res_units.add().name = k
+        wm.cap_units.clear()
         for k in cap_units.keys():
-            scene.cap_units.add().name = k
+            wm.cap_units.add().name = k
 
     @classmethod
     def draw_props(self, ob, layout, scene):
+        wm = bpy.context.window_manager
         layout.prop_search(
-            ob, 's_excitation', scene, 's_excitations', text="Excitation"
+            ob, 's_excitation', wm, 's_excitations', text="Excitation"
         )
         layout.prop_search(
-            ob, 's_function', scene, 's_functions', text="Function"
+            ob, 's_function', wm, 's_functions', text="Function"
         )
         split = layout.split(factor=0.33)
         split.row().prop(ob, 's_hard', text="Hard")
         if not ob.get('s_hard'):
             split.row().prop(ob, 's_resistance', text="Resistance")
         split = layout.split(factor=0.5)
-        split.row().prop_search(ob, 's_axis', scene, 's_axes', text="Axis")
+        split.row().prop_search(ob, 's_axis', wm, 's_axes', text="Axis")
         split.row().prop(ob, 's_scale', text="Scale")
         if ob.s_function != 'Constant':
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_tstart', text="Start time")
             split.prop_search(
-                ob, 's_tstartUnits', scene, 'time_units', text=""
+                ob, 's_tstartUnits', wm, 'time_units', text=""
             )
         if ob.s_function == 'Gaussian Pulse':
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_trise', text="Rise time")
-            split.prop_search(ob, 's_triseUnits', scene, 'time_units', text="")
+            split.prop_search(ob, 's_triseUnits', wm, 'time_units', text="")
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_duration', text="Duration")
             split.prop_search(
-                ob, 's_durationUnits', scene, 'time_units', text=""
+                ob, 's_durationUnits', wm, 'time_units', text=""
             )
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_tfall', text="Fall time")
-            split.prop_search(ob, 's_tfallUnits', scene, 'time_units', text="")
+            split.prop_search(ob, 's_tfallUnits', wm, 'time_units', text="")
         elif ob.s_function == 'Sine':
             split = layout.split(factor=0.7)
             split.row().prop(ob, 's_duration', text="Period")
             split.prop_search(
-                ob, 's_durationUnits', scene, 'time_units', text=""
+                ob, 's_durationUnits', wm, 'time_units', text=""
             )
         layout.prop(ob, 'snap', text="Snap bounds to sim grid")
         layout.prop(ob, 'verbose', text="Verbosity")
@@ -1243,7 +1246,7 @@ class Probe(Block):
 
     @classmethod
     def register_types(self):
-        ts = bpy.types.Scene
+        ts = bpy.types.WindowManager
         ts.p_fields = bp.CollectionProperty(type=bpy.types.PropertyGroup)
         ts.p_fieldsMag = bp.CollectionProperty(type=bpy.types.PropertyGroup)
         ts.p_axes = bp.CollectionProperty(type=bpy.types.PropertyGroup)
@@ -1252,27 +1255,27 @@ class Probe(Block):
 
     @classmethod
     def unregister_types(self):
-        del bpy.types.Scene.p_fields
-        del bpy.types.Scene.p_fieldsMag
-        del bpy.types.Scene.p_axes
-        del bpy.types.Scene.p_shapes
-        del bpy.types.Scene.p_legendLocs
+        del bpy.types.WindowManager.p_fields
+        del bpy.types.WindowManager.p_fieldsMag
+        del bpy.types.WindowManager.p_axes
+        del bpy.types.WindowManager.p_shapes
+        del bpy.types.WindowManager.p_legendLocs
 
     @classmethod
-    def populate_types(self, scene):
-        scene.p_fields.clear()
+    def populate_types(self, wm):
+        wm.p_fields.clear()
         for k in self.fieldNames.keys():
-            scene.p_fields.add().name = k
-        scene.p_fieldsMag.clear()
+            wm.p_fields.add().name = k
+        wm.p_fieldsMag.clear()
         for k in self.field_names_mag.keys():
-            scene.p_fieldsMag.add().name = k
-        scene.p_axes.clear()
+            wm.p_fieldsMag.add().name = k
+        wm.p_axes.clear()
         for k in ('X', 'Y', 'Z', '-X', '-Y', '-Z', 'XYZ', 'Magnitude'):
-            scene.p_axes.add().name = k
-        scene.p_shapes.clear()
+            wm.p_axes.add().name = k
+        wm.p_shapes.clear()
         for k in ('Point', 'Line', 'Plane', 'Volume'):
-            scene.p_shapes.add().name = k
-        scene.p_legendLocs.clear()
+            wm.p_shapes.add().name = k
+        wm.p_legendLocs.clear()
         for k in (
             'best',
             'upper right',
@@ -1286,18 +1289,19 @@ class Probe(Block):
             'upper center',
             'center',
         ):
-            scene.p_legendLocs.add().name = k
+            wm.p_legendLocs.add().name = k
 
     @classmethod
     def draw_props(self, ob, layout, scene):
+        wm = bpy.context.window_manager
         fields = ('p_fields', 'p_fieldsMag')[ob.p_axis == 'Magnitude']
         layout.prop_search(
-            ob, 'p_shape', scene, 'p_shapes', text="Display Shape"
+            ob, 'p_shape', wm, 'p_shapes', text="Display Shape"
         )
 
         if ob.p_shape == 'Point':
-            layout.prop_search(ob, 'p_axis', scene, 'p_axes', text="Axis")
-            layout.prop_search(ob, 'p_field', scene, fields, text="Field")
+            layout.prop_search(ob, 'p_axis', wm, 'p_axes', text="Axis")
+            layout.prop_search(ob, 'p_field', wm, fields, text="Field")
             row = layout.row()
             row.prop(ob, 'p_dispIsMesh', text="Use Mesh")
             row.prop(ob, 'p_dispIsPlot', text="MatPlotLib")
@@ -1325,8 +1329,8 @@ class Probe(Block):
             )
 
         elif ob.p_shape == 'Line':
-            layout.prop_search(ob, 'p_axis', scene, 'p_axes', text="Axis")
-            layout.prop_search(ob, 'p_field', scene, fields, text="Field")
+            layout.prop_search(ob, 'p_axis', wm, 'p_axes', text="Axis")
+            layout.prop_search(ob, 'p_field', wm, fields, text="Field")
             row = layout.row()
             row.prop(ob, 'p_sum', text="Sum values")
             row.prop(ob, 'p_avg', text="Average values")
@@ -1334,8 +1338,8 @@ class Probe(Block):
             row.prop(ob, 'p_verbose', text="Verbosity")
 
         elif ob.p_shape == 'Plane':
-            layout.prop_search(ob, 'p_axis', scene, 'p_axes', text="Axis")
-            layout.prop_search(ob, 'p_field', scene, fields, text="Field")
+            layout.prop_search(ob, 'p_axis', wm, 'p_axes', text="Axis")
+            layout.prop_search(ob, 'p_field', wm, fields, text="Field")
             row = layout.row()
             row.prop(ob, 'p_dispScale', text="Brightness")
             row.prop(ob, 'p_pixelRep', text="Repeat")
@@ -1344,7 +1348,7 @@ class Probe(Block):
             row.prop(ob, 'p_verbose', text="Verbosity")
 
         elif ob.p_shape == 'Volume':
-            layout.prop_search(ob, 'p_field', scene, fields, text="Field")
+            layout.prop_search(ob, 'p_field', wm, fields, text="Field")
             row = layout.row()
             row.prop(ob, 'p_sfactor', text="Cells/Sample")
             row.prop(ob, 'p_log', text="Log scale")
@@ -1401,13 +1405,13 @@ class Probe(Block):
                 f"should be {nix}x{niy}"
             )
 
-    def probe_plane_frame_handler(self, scene, depsgraph):
+    def probe_plane_frame_handler(self, wm, depsgraph):
         """Timeline frame changed: update probe from history"""
         data = self.history.get(scene.frame_current)
         if not data is None:
             self.set_plane_texture(data)
 
-    def probe_value_frame_handler(self, scene, depsgraph):
+    def probe_value_frame_handler(self, wm, depsgraph):
         data = self.history.get(scene.frame_current)
         ##print("probeValueFrHand:", self.ob.name, scn.frame_current, data)
         if not data is None:
@@ -2593,7 +2597,7 @@ class Sim:
             blf.draw(font_id, "")
             self.last_pos_meas = None
 
-    def frame_handler(self, scene, depsgraph):
+    def frame_handler(self, wm, depsgraph):
         ##print(f"frame_handler {id(self)}")
         self.area3d.tag_redraw()  # update status line
 
@@ -3001,10 +3005,11 @@ class FieldObjectPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
+        wm = bpy.context.window_manager
         ob = context.object
         fob = get_fields_ob(bpy.context, create=False)
         layout.prop_search(
-            ob, "blockType", scene, "block_types", text="Block type"
+            ob, "blockType", wm, "block_types", text="Block type"
         )
         bt = ob.blockType
         if bt:
@@ -3044,13 +3049,13 @@ class FieldObjectPanel(bpy.types.Panel):
         layout.operator("fdtd.export_all")
 
 
-def populate_types(scene):
-    bpy.app.handlers.depsgraph_update_pre.remove(populate_types)
-    scene.block_types.clear()
+def populate_types():
+    wm = bpy.context.window_manager
+    wm.block_types.clear()
     for k, block in block_classes.items():
-        scene.block_types.add().name = k
+        wm.block_types.add().name = k
         if hasattr(block, 'populate_types'):
-            block.populate_types(scene)
+            block.populate_types(wm)
 
 
 class FieldMatPanel(bpy.types.Panel):
@@ -3140,7 +3145,7 @@ def register():
     km.keymap_items.new("fdtd.pause", 'P', 'PRESS')
     addon_keymaps.append(km)
 
-    bpy.types.Scene.block_types = bp.CollectionProperty(
+    bpy.types.WindowManager.block_types = bp.CollectionProperty(
         type=bpy.types.PropertyGroup
     )
 
@@ -3148,7 +3153,7 @@ def register():
         if hasattr(block, 'register_types'):
             block.register_types()
     bpy.types.Object.blockType = bp.StringProperty()
-    bpy.app.handlers.depsgraph_update_pre.append(populate_types)
+    populate_types()
 
     for cls in block_classes.values():
         cls.create_types()
@@ -3162,7 +3167,7 @@ def unregister():
     for km in addon_keymaps:
         wm.keyconfigs.addon.keymaps.remove(km)
     addon_keymaps.clear()
-    del bpy.types.Scene.block_types
+    del bpy.types.WindowManager.block_types
     del bpy.types.Object.blockType
     for cls in block_classes.values():
         cls.del_types()
