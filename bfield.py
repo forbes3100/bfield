@@ -44,13 +44,6 @@ import re
 from subprocess import Popen, PIPE
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-
-cwd = bpy.path.abspath("//")
-sys.path.append(cwd)
-print(f"{cwd=}")
-if 'siunits' in sys.modules:
-    ##print("reloading module siunits")
-    del sys.modules['siunits']
 import siunits as si
 
 is_linux = os.uname()[0] == 'Linux'
@@ -124,10 +117,12 @@ PAUSED = 4
 
 sims = {}  # dictionary of FDTD simulations, indexed by scene
 field_operator = None
+cwd = None  # working directory containing blender file
 
 
 def tu(ob, name):
-    return getattr(ob, name) * time_units[getattr(ob, name + 'Units')]
+    """Get the value of an attribute in its currently selected units"""
+    return getattr(ob, name) * time_units[getattr(ob, name + '_units')]
 
 
 def get_mouse_3d(event):
@@ -318,8 +313,11 @@ class Block:
 
     @classmethod
     def del_types(cls):
-        for key in cls.props.keys():
-            delattr(bpy.types.Object, key)
+        print(f"Block.del_types for {cls.__name__}: ")
+        for attr in cls.props.keys():
+            if hasattr(bpy.types.Object, attr):
+                print(f"delattr({bpy.types.Object}), {attr})")
+                delattr(bpy.types.Object, attr)
 
     def get_field_mat(self):
         ob = self.ob
@@ -995,7 +993,7 @@ class Source(Block):
     }
 
     @classmethod
-    def register_types(self):
+    def register_types(cls):
         bpy.types.WindowManager.s_excitations = bp.CollectionProperty(
             type=bpy.types.PropertyGroup
         )
@@ -1016,7 +1014,7 @@ class Source(Block):
         )
 
     @classmethod
-    def unregister_types(self):
+    def unregister_types(cls):
         del bpy.types.WindowManager.s_excitations
         del bpy.types.WindowManager.s_axes
         del bpy.types.WindowManager.s_functions
@@ -1025,7 +1023,7 @@ class Source(Block):
         del bpy.types.WindowManager.cap_units
 
     @classmethod
-    def populate_types(self, wm):
+    def populate_types(cls, wm):
         wm.s_excitations.clear()
         for k in ('Voltage', 'Current', 'Electrical', 'Magnetic'):
             wm.s_excitations.add().name = k
@@ -1217,7 +1215,7 @@ class Probe(Block):
             default=0.5,
         ),
     }
-    fieldNames = {
+    field_names = {
         'Electric': 'E',
         'Magnetic': 'H',
         'Voltage': 'E',
@@ -1234,7 +1232,7 @@ class Probe(Block):
         'SigE': 'S',
         'Current Density': 'J',
     }
-    fieldUnits = {
+    field_units = {
         'V': "V",
         'E': "V/m",
         'M': "A/m",
@@ -1244,7 +1242,7 @@ class Probe(Block):
     }
 
     @classmethod
-    def register_types(self):
+    def register_types(cls):
         ts = bpy.types.WindowManager
         ts.p_fields = bp.CollectionProperty(type=bpy.types.PropertyGroup)
         ts.p_fieldsMag = bp.CollectionProperty(type=bpy.types.PropertyGroup)
@@ -1253,7 +1251,7 @@ class Probe(Block):
         ts.p_legendLocs = bp.CollectionProperty(type=bpy.types.PropertyGroup)
 
     @classmethod
-    def unregister_types(self):
+    def unregister_types(cls):
         del bpy.types.WindowManager.p_fields
         del bpy.types.WindowManager.p_fieldsMag
         del bpy.types.WindowManager.p_axes
@@ -1261,12 +1259,12 @@ class Probe(Block):
         del bpy.types.WindowManager.p_legendLocs
 
     @classmethod
-    def populate_types(self, wm):
+    def populate_types(cls, wm):
         wm.p_fields.clear()
-        for k in self.fieldNames.keys():
+        for k in cls.field_names.keys():
             wm.p_fields.add().name = k
         wm.p_fieldsMag.clear()
-        for k in self.field_names_mag.keys():
+        for k in cls.field_names_mag.keys():
             wm.p_fieldsMag.add().name = k
         wm.p_axes.clear()
         for k in ('X', 'Y', 'Z', '-X', '-Y', '-Z', 'XYZ', 'Magnitude'):
@@ -1418,9 +1416,8 @@ class Probe(Block):
                 self.ob.p_value = data
         pass  # (fixes func pulldown indentation)
 
-    # Create or update a probe's display image, objects, etc.
-
     def prepare_gen(self):
+        """Create or update a probe's display image, objects, etc."""
         ob = self.ob
         if ob.p_verbose > 0:
             print("Probe.prepare_gen start", self.ob.name)
@@ -2003,8 +2000,8 @@ class Probe(Block):
         self.history[step] = data
 
     @classmethod
-    def plot_all_set_up(self):
-        self.figs = {}
+    def plot_all_set_up(cls):
+        cls.figs = {}
 
     def get_plot_fig(self, data_shape):
         ob = self.ob
@@ -2083,7 +2080,7 @@ class Probe(Block):
             )
             plt.legend(loc=ob.p_legend_loc)
             fn = ob.p_field
-            fig.ylabel = f"{fn.capitalize()} (%s{self.fieldUnits[fn[0]]})"
+            fig.ylabel = f"{fn.capitalize()} (%s{self.field_units[fn[0]]})"
             fig.max_x = max(xs[-1], fig.max_x)
             fig.min_y = min(ys.min(), fig.min_y)
             fig.max_y = max(ys.max(), fig.max_y)
@@ -2092,12 +2089,12 @@ class Probe(Block):
             print("not plottable")
 
     @classmethod
-    def plot_all_finish(self):
-        if not self.figs:
+    def plot_all_finish(cls):
+        if not cls.figs:
             print("no plottable probes")
             return
 
-        for fig in self.figs.values():
+        for fig in cls.figs.values():
             fnum = fig.figure.number
             print(f"plotting figure {fnum}")
             plt.figure(fnum)
@@ -2175,9 +2172,10 @@ class Sim:
     mouse_pos = None
 
     def __init__(self, context):
-        global sims
+        global sims, cwd
         sims[context.scene] = self
         bpy.app.driver_namespace['fields'] = sims
+        cwd = os.path.split(bpy.data.filepath)[0]
 
         obs = [
             ob
@@ -3016,7 +3014,7 @@ class FieldObjectPanel(bpy.types.Panel):
                 mat = ob.material_slots[0]
                 if mat.name in ('FieldH', 'FieldE'):
                     field = mat.name[-1]
-                    units = Probe.fieldUnits[('E', 'M')[field == 'H']]
+                    units = Probe.field_units[('E', 'M')[field == 'H']]
                     Mr = ob.rotation_euler.to_matrix()
                     V = Mr @ Vector((1, 0, 0))
                     ap = ob.parent
@@ -3081,8 +3079,11 @@ class FieldMatPanel(bpy.types.Panel):
 
     @classmethod
     def del_types(cls):
-        for key in cls.props.keys():
-            delattr(bpy.types.Material, key)
+        print(f"FieldMatPanel.del_types for {cls.__name__}: ")
+        for attr in cls.__annotations__.keys():
+            if hasattr(bpy.types.Material, attr):
+                print(f"delattr({bpy.types.Material}), {attr})")
+                delattr(bpy.types.Material, attr)
 
     def draw(self, context):
         layout = self.layout
@@ -3096,7 +3097,7 @@ class FieldMatPanel(bpy.types.Panel):
                 layout.prop(mat, 'sige', text="Conductivity σE")
             if mat.name in ('FieldH', 'FieldE'):
                 field = mat.name[-1]
-                units = Probe.fieldUnits[('E', 'M')[field == 'H']]
+                units = Probe.field_units[('E', 'M')[field == 'H']]
                 Mr = ob.rotation_euler.to_matrix()
                 V = Mr @ Vector((1, 0, 0))
                 r = ob.scale.x
@@ -3159,7 +3160,7 @@ def register():
 
 def unregister():
     print("unregister:")
-    for c in classes:
+    for c in operators_panels:
         bpy.utils.unregister_class(c)
     for km in addon_keymaps:
         wm.keyconfigs.addon.keymaps.remove(km)
