@@ -111,7 +111,7 @@ void doCommand(int fd, char* text) {
             cwd = args[1];
             r = chdir(cwd);
             if (r != 0)
-                throw new Err("chdir returned %d", r);
+                throw new Err("chdir(%s) returned %d", cwd, r);
            printf("chdir %s\n", cwd);
             _ = write(fd, "A", 1);
             break;
