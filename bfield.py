@@ -442,6 +442,7 @@ class MatBlock(Block):
         'MATMESH': 'C',
         'RESISTOR': 'C',
         'CAPACITOR': 'C',
+        'SUBSPACE': 'C',
         'MATCYLINDERX': 'X',
         'MATCYLINDERY': 'Y',
         'MATCYLINDERZ': 'Z',
