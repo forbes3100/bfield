@@ -117,11 +117,15 @@ PAUSED = 4
 
 sims = {}  # dictionary of FDTD simulations, indexed by scene
 field_operator = None
-cwd = None  # working directory containing blender file
+
+
+def cwd():
+    """Get working directory containing blender file"""
+    return os.path.split(bpy.data.filepath)[0]
 
 
 def tu(ob, name):
-    """Get the value of an attribute in its currently selected units"""
+    """Get the value of an attribute, applying its time units"""
     return getattr(ob, name) * time_units[getattr(ob, name + '_units')]
 
 
@@ -306,17 +310,13 @@ class Block:
 
     @classmethod
     def create_types(cls):
-        ##print(f"Block.create_types for {cls.__name__}: "
-        ##      f"adding {', '.join(cls.props.keys())}")
         for key, value in cls.props.items():
             setattr(bpy.types.Object, key, value)
 
     @classmethod
     def del_types(cls):
-        print(f"Block.del_types for {cls.__name__}: ")
         for attr in cls.props.keys():
             if hasattr(bpy.types.Object, attr):
-                print(f"delattr({bpy.types.Object}), {attr})")
                 delattr(bpy.types.Object, attr)
 
     def get_field_mat(self):
@@ -581,7 +581,7 @@ class MeshMatBlock(MatBlock):
         # only create directory of cached files if it doesn't exist
         dir = f"//cache_dp/{ob.name}_{nz:04}"
         dirp = bpy.path.abspath(dir)
-        ##print(f"{cwd=} cache_dp {dirp=}")
+        ##print(f"{cwd()=} cache_dp {dirp=}")
         if not os.path.isdir(dirp):
 
             # delete any previous canvas object and brush modifier
@@ -2144,7 +2144,7 @@ class Probe(Block):
             plt.subplots_adjust(left=0.15, top=0.95, right=0.95)
             if not is_linux:
                 plt.show(block=False)
-            output_dir = os.path.join(cwd, 'output')
+            output_dir = os.path.join(cwd(), 'output')
             print(f"writing plots to {output_dir}")
             if not os.path.exists(output_dir):
                 os.mkdir(output_dir)
@@ -2172,10 +2172,9 @@ class Sim:
     mouse_pos = None
 
     def __init__(self, context):
-        global sims, cwd
+        global sims
         sims[context.scene] = self
         bpy.app.driver_namespace['fields'] = sims
-        cwd = os.path.split(bpy.data.filepath)[0]
 
         obs = [
             ob
@@ -2482,7 +2481,7 @@ class Sim:
             self.start_fdtd()
 
         # tell simulator to chdir to blender file's directory
-        cmd = f"C {cwd}"
+        cmd = f"C {cwd()}"
         if self.verbose > 1:
             print(cmd)
         self.send(cmd)
@@ -2552,7 +2551,7 @@ class Sim:
         scn = bpy.context.scene
         font_id = 0
         w = context.region.width
-        font_scale = (2, 1)[is_linux]
+        font_scale = int(bpy.context.preferences.system.pixel_size)
         blf.position(font_id, w - 200 * font_scale, 10, 0)
         blf.color(font_id, 255, 255, 255, 255)
         blf.size(font_id, 12 * font_scale)
@@ -2943,7 +2942,7 @@ def export_scene_x3d():
     bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
     # export as x3d file
-    dir = os.path.join(cwd, 'scenes_x3d')
+    dir = os.path.join(cwd(), 'scenes_x3d')
     if not os.path.exists(dir):
         os.mkdir(dir)
     base = os.path.basename(bpy.data.filepath)
@@ -3079,10 +3078,8 @@ class FieldMatPanel(bpy.types.Panel):
 
     @classmethod
     def del_types(cls):
-        print(f"FieldMatPanel.del_types for {cls.__name__}: ")
         for attr in cls.__annotations__.keys():
             if hasattr(bpy.types.Material, attr):
-                print(f"delattr({bpy.types.Material}), {attr})")
                 delattr(bpy.types.Material, attr)
 
     def draw(self, context):
