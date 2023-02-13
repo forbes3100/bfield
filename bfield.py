@@ -37,6 +37,7 @@ import math as ma
 from mathutils import Vector, Matrix, Euler
 from bpy_extras import view3d_utils
 from bpy_extras.node_shader_utils import PrincipledBSDFWrapper
+from bpy.app.handlers import persistent
 import sys
 import os
 import time
@@ -3052,6 +3053,13 @@ def populate_types():
             block.populate_types(wm)
 
 
+@persistent
+def load_post_handler(dummy):
+    """Repopulate type data used for panel pop-ups, etc."""
+    print("load_post_handler: populate_types")
+    populate_types()
+
+
 class FieldMatPanel(bpy.types.Panel):
     """Creates a FDTD Panel in the Material properties window"""
 
@@ -3149,6 +3157,8 @@ def register():
             block.register_types()
     bpy.types.Object.block_type = bp.StringProperty()
     populate_types()
+    ##print("register: added load_post_handler")
+    bpy.app.handlers.load_post.append(load_post_handler)
 
     for cls in block_classes.values():
         cls.create_types()
