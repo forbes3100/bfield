@@ -67,6 +67,21 @@ time_units = {
 res_units = {'ohms': 1.0, 'K': 1e3, 'M': 1e6}
 cap_units = {'uf': 1e-6, 'nf': 1e-9, 'pf': 1e-12}
 
+# sim states
+STOPPED = 0
+INITIALIZING = 1
+RUNNING = 3
+PAUSED = 4
+
+sims = {}  # dictionary of FDTD simulations, indexed by scene
+field_operator = None
+
+
+def warn(msg):
+    print(f"**** WARNING: {msg}")
+    if field_operator:
+        field_operator.report({'WARNING'}, msg)
+
 
 class StandardCollection:
     """Name of layer collection
@@ -109,15 +124,6 @@ coll_snap = StandardCollection("Snap")
 coll_plane = StandardCollection("Plane")
 coll_E = StandardCollection("E")
 coll_H = StandardCollection("H")
-
-# sim states
-STOPPED = 0
-INITIALIZING = 1
-RUNNING = 3
-PAUSED = 4
-
-sims = {}  # dictionary of FDTD simulations, indexed by scene
-field_operator = None
 
 
 def cwd():
@@ -196,9 +202,9 @@ def bounds(ob):
 
     # bound_box only usable when unrotated & unscaled
     if ob.rotation_euler != Euler((0.0, 0.0, 0.0), 'XYZ'):
-        print(f"**** Object {ob.name} needs Apply Rotation!")
+        warn(f"Object {ob.name} needs Apply Rotation!")
     if ob.scale != Vector((1.0, 1.0, 1.0)):
-        print(f"**** Object {ob.name} needs Apply Scale!")
+        warn(f"Object {ob.name} needs Apply Scale!")
 
     mods_off = []
     for mod in ob.modifiers:
@@ -496,7 +502,7 @@ class MatBlock(Block):
                             or mod.use_merge_vertices
                         )
                     ):
-                        print(f"**** {ob.name} array offsets not constant")
+                        warn(f"{ob.name} array offsets not constant")
                     offset = mod.constant_offset_displace
                     new_selection = []
                     for i in range(1, mod.count):
@@ -519,7 +525,7 @@ class MatBlock(Block):
                     selection.extend(new_selection)
 
                 else:
-                    print(f"**** {ob.name} needs Apply {t} Modifier!")
+                    warn(f"{ob.name} needs Apply {t} Modifier!")
 
         yield
 
@@ -841,7 +847,7 @@ class Resistor(MatBlock):
         # block dimensions [mm]
         D = self.Be - self.Bs
         if D.x < 0 or D.y < 0 or D.z < 0:
-            print(f"**** Resistor {ob.name} rotated")
+            warn(f"Resistor {ob.name} rotated")
             return
         axis = ob.axis[-1]
         if axis == 'X':
@@ -902,7 +908,7 @@ class Capacitor(MatBlock):
         # block dimensions [mm]
         D = self.Be - self.Bs
         if D.x < 0 or D.y < 0 or D.z < 0:
-            print(f"**** Capacitor {ob.name} rotated")
+            warn(f"Capacitor {ob.name} rotated")
             return
         axis = ob.axis[-1]
         # C = (e0*epr)*(A/d)
@@ -2457,7 +2463,7 @@ class Sim:
             stop_ps = self.fields_ob.get('stop_ps', 0)
             if stop_ps > 100000:
                 # sim sends a 6-digit step number back with each ack
-                print("**** Error: stop time limited to 100000 max.")
+                warn("Stop time limited to 100000 max.")
             current_ps = scn.frame_current * self.dt * 1e12
             ##print(f"{stop_ps=} {self.frame_no=} {self.dt=} {current_ps}")
             if stop_ps > 0 and current_ps > stop_ps:
