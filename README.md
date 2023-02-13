@@ -38,40 +38,38 @@ The simulator requires libpng. Download the latest from libpng.org (libpng-1.6.3
 
 Launch Blender, do File>Open and open bfield_test.blend. Drag up the bottom of the main viewport to reveal the Python console, and note the version of Python it's running. For Blender 3.4.1, it's Python 3.10.8.
 
-Installation is easier if this is also the current running version (or close to it). Quit Blender, right-click on Blender.app, and choose Show Package Contents. Delete the "python" folder there in "Contents/Resources/3.4".
-
-This appears to leave Blender in a state where it won't launch from Finder, but "bl" works. (?)
-
-
-See which python version is there. In this case python3.10. If that version isn't installed on your machine, you will need to download and install it so you can download the correct versions of modules. A quick way to check is to type "python3", and then a TAB key for auto-completion to see what's available.
+If that version of Python isn't installed on your machine, you will need to download and install it so you can download the correct versions of modules. A quick way to check is to type "python3", and then a TAB key for auto-completion to see what's available.
 
 The following python packages are required:
 
-- matplotlib
-- packaging
+- matplotlib and its dependencies
 - PIL
-- pyparsing
-- cycler
-- dateutil
-- kiwisolver
-- six
 - mpl_toolkits
  
 To insure that these are all installed, type:
 
 **Mac**:
 
-	python3.10 -m pip install matplotlib packaging PIL pyparsing cycler dateutil kiwisolver six mpl_toolkits --user
+	brew install python@3.10
+	python3.10 -m pip install matplotlib --user
+	(cd to your bfield directory)
+	mkdir scripts
+	ln -s /opt/homebrew/lib/python3.10/site-packages scripts/modules
+	cp siunits.py scripts/modules/
 
 **Linux**:
 
-	apt-get install python3-pip
-	python3.10 -m pip install matplotlib packaging PIL pyparsing cycler dateutil kiwisolver six mpl_toolkits --user
-
-    mkdir pylinks
-    ln -s pylinks/modules ~/.local/lib/python3.10/site-packages
+	sudo apt-get install python3.10
+	sudo apt-get install python3-pip
+	python3.10 -m pip install matplotlib --user
+	(cd to your bfield directory)
+	mkdir scripts
+	ln -s ~/.local/lib/python3.10/site-packages scripts/modules
+	cp siunits.py scripts/modules/
     
-In Blender, set Preferences>File Paths>Data>Scripts to //pylinks
+In Blender, set Edit>Preferences>File Paths>Data>Scripts to the path of this scripts directory. Then go up a level and into Add-ons, set the filter to "User", click Install, choose the bfield.py file in your bfield directory, and click Install Add-on. Close Preferences and quit and restart Blender.
+
+At this point you should be able to go to Edit>Preferences>Add-ons, set the filter to "User", and click the Enable button for this "Add Mesh: FDTD Field Sim" add-on. Check your terminal window for errors. If working, an "FDTD" panel should be appear in the Object Properties panel.
 
 You may also wish to disable the Ubuntu's use of Super-P. See
 https://askubuntu.com/questions/68463/how-to-disable-global-super-p-shortcut
@@ -92,9 +90,8 @@ https://askubuntu.com/questions/68463/how-to-disable-global-super-p-shortcut
 **Linux**: type "blender" to launch Blender.
 
 - Open file platesm.blend.
-- Click the "Run Script" button in the bfield.py pane.
 
-This adds the following keys (in Linux, Cmd is the Super key):
+The following keys are available (in Linux, Cmd is the Super key):
 
 - **Cmd-R**: Run FDTD.
 
