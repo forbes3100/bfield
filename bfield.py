@@ -760,9 +760,6 @@ class FieldsBlock(MatBlock):
         ),
         'us_poll': bp.IntProperty(description="us/Step", min=0, default=50),
         'ms_rate': bp.IntProperty(description="ms/Update", min=0, default=500),
-        'rec': bp.BoolProperty(
-            description="Record as animation", default=True
-        ),
         'pml_border': bp.IntProperty(
             description="PML border width, cells", min=0, default=4
         ),
@@ -790,7 +787,6 @@ class FieldsBlock(MatBlock):
         col.prop(ob, 'ms_rate', text="ms/Up")
         col.prop(ob, 'pml_border', text="PML cells")
         col.prop(ob, 'verbose', text="Verbosity")
-        col.prop(ob, 'rec', text="Record")
         layout.prop(ob, 'snap', text="Snap bounds to sim grid")
 
     def send_sim_def_gen(self):
@@ -1816,6 +1812,7 @@ class Probe(Block):
             print("probe: bad ack:", ack)
             return
         step = int(ack[1:])
+        ##print(f"frame_set({step=}) from sim")
         scn.frame_set(step)
 
         # receive data
@@ -2010,10 +2007,9 @@ class Probe(Block):
                     arrow.rotation_euler.rotate(M)
                 else:
                     arrow.scale = (0, 0, 0)
-                if sim.rec:
-                    arrow.keyframe_insert(data_path='rotation_euler')
-                    arrow.keyframe_insert(data_path='scale')
-                    ##arrow.keyframe_insert(data_path='show_name')
+                arrow.keyframe_insert(data_path='rotation_euler')
+                arrow.keyframe_insert(data_path='scale')
+                ##arrow.keyframe_insert(data_path='show_name')
 
         # record data history
         if not isinstance(data, (int, float, tuple)):
@@ -2348,11 +2344,6 @@ class Sim:
         if ob.verbose > 0:
             print("Fields nx,ny,nz=", self.nx, self.ny, self.nz)
 
-        # start recording
-        if ob.rec:
-            scn.frame_set(1)
-            self.frame_no = 1
-
     def create_blocks_gen(self):
         """Generator to create sim-blocks for all visible blocks within Fields."""
         fob = self.fields_ob
@@ -2473,10 +2464,9 @@ class Sim:
             self.tms = tms
             print(f"[{dtms}>{scn.frame_current}:] ", end="")
             sys.stdout.flush()
-        rec = self.rec
-        if rec:
-            scn.frame_set(self.frame_no)
-            self.frame_no += 1
+
+        current_ps = scn.frame_current * self.dt * 1e12
+        ##print(f"frame={scn.frame_current} dt={self.dt:4g} {current_ps:7g}")
         for block in self.blocks:
             if hasattr(block, 'do_step') and not block.ob.hide_viewport:
                 block.do_step()
@@ -2484,17 +2474,12 @@ class Sim:
             if stop_ps > 100000:
                 # sim sends a 6-digit step number back with each ack
                 warn("Stop time limited to 100000 max.")
-            current_ps = scn.frame_current * self.dt * 1e12
-            ##print(f"{stop_ps=} {self.frame_no=} {self.dt=} {current_ps}")
             if stop_ps > 0 and current_ps > stop_ps:
                 print("Reached stop time")
-                ##field_operator.cancel(bpy.context)
                 self.pause()
                 break
             if self.state == STOPPED:
-                ##print("do_step_blocks stopped")
                 break
-        scn.frame_set(scn.frame_current + 1)
 
     def step_whole_fdtd_gen(self):
         """Do one timer step: first initialize simulation, then step it"""
