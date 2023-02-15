@@ -39,6 +39,7 @@ int stepsPoll = 1;      // number of steps per kevent poll, for fastest running
 clock_t tstart;         // real time start
 int kq;                 // kernel events queue
 
+const int ackLen = 8;   // length of ack/nack & frame number reply, w/NULL
 
 // ----------------------------------------------------------------------------
 
@@ -165,16 +166,16 @@ void doCommand(int fd, char* text) {
             break;
 
         case 'Q':   // query probe data
-            char ack[8];
+            char ack[ackLen];
             if (mode != IDLE) {
                 if (ai != 2)
                     throw new Err("probe Q cmd: expected name arg");
-                snprintf(ack, 8, "A%06d", osp->step);
-                _ = write(fd, ack, 7);
+                snprintf(ack, ackLen, "A%0*d", ackLen-2, osp->step);
+                _ = write(fd, ack, ackLen-1);
                 Probe::writeCells(fd, args[1]);
             } else {
-                snprintf(ack, 8, "D000000");
-                _ = write(fd, ack, 7);
+                snprintf(ack, ackLen, "D%0*d", ackLen-2, 0);
+                _ = write(fd, ack, ackLen-1);
             }
             break;
 
@@ -307,9 +308,9 @@ void server() {
                 } catch (Err* err) {
                     err->report();
                     int n = strlen(err->message);
-                    char nack[4];
-                    snprintf(nack, 4, "N%02d", n);
-                    size_t _ = write(fd, nack, 3);
+                    char nack[ackLen];
+                    snprintf(nack, ackLen, "N%0*d", ackLen-2, n);
+                    size_t _ = write(fd, nack, ackLen-1);
                     _ = write(fd, err->message, n);
                     if (mode == RUN)
                         stopSim();

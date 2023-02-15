@@ -1920,7 +1920,7 @@ class Probe(Block):
                 field_name = self.field_names_mag[ob.p_field]
                 units = ("V/m", "A/m")[ob.p_field == 'Magnetic']
                 print(
-                    f"{step}: t={t:9.2e}: {ob.name} "
+                    f"{step}: {t * 1e12:6.3f} ps {ob.name} "
                     f"{field_name}[{i},{j},{k}]",
                     end="",
                 )
@@ -2272,7 +2272,7 @@ class Sim:
             r = s.recv(1)
             if r == b'N':
                 # server got an error: report it and stop (server doesn't)
-                err_len = int(s.recv(2))
+                err_len = int(s.recv(6))
                 err_msg = s.recv(err_len).decode("utf-8")
                 raise RuntimeError(err_msg)
             elif check and r != b'A':
