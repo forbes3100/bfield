@@ -1252,34 +1252,34 @@ class Probe(Block):
     def register_types(cls):
         ts = bpy.types.WindowManager
         ts.p_fields = bp.CollectionProperty(type=bpy.types.PropertyGroup)
-        ts.p_fieldsMag = bp.CollectionProperty(type=bpy.types.PropertyGroup)
+        ts.p_fields_mag = bp.CollectionProperty(type=bpy.types.PropertyGroup)
         ts.p_axes = bp.CollectionProperty(type=bpy.types.PropertyGroup)
         ts.p_shapes = bp.CollectionProperty(type=bpy.types.PropertyGroup)
-        ts.p_legendLocs = bp.CollectionProperty(type=bpy.types.PropertyGroup)
+        ts.p_legend_locs = bp.CollectionProperty(type=bpy.types.PropertyGroup)
 
     @classmethod
     def unregister_types(cls):
         del bpy.types.WindowManager.p_fields
-        del bpy.types.WindowManager.p_fieldsMag
+        del bpy.types.WindowManager.p_fields_mag
         del bpy.types.WindowManager.p_axes
         del bpy.types.WindowManager.p_shapes
-        del bpy.types.WindowManager.p_legendLocs
+        del bpy.types.WindowManager.p_legend_locs
 
     @classmethod
     def populate_types(cls, wm):
         wm.p_fields.clear()
         for k in cls.field_names.keys():
             wm.p_fields.add().name = k
-        wm.p_fieldsMag.clear()
+        wm.p_fields_mag.clear()
         for k in cls.field_names_mag.keys():
-            wm.p_fieldsMag.add().name = k
+            wm.p_fields_mag.add().name = k
         wm.p_axes.clear()
         for k in ('X', 'Y', 'Z', '-X', '-Y', '-Z', 'XYZ', 'Magnitude'):
             wm.p_axes.add().name = k
         wm.p_shapes.clear()
         for k in ('Point', 'Line', 'Plane', 'Volume'):
             wm.p_shapes.add().name = k
-        wm.p_legendLocs.clear()
+        wm.p_legend_locs.clear()
         for k in (
             'best',
             'upper right',
@@ -1293,12 +1293,12 @@ class Probe(Block):
             'upper center',
             'center',
         ):
-            wm.p_legendLocs.add().name = k
+            wm.p_legend_locs.add().name = k
 
     @classmethod
     def draw_props(self, ob, layout, scene):
         wm = bpy.context.window_manager
-        fields = ('p_fields', 'p_fieldsMag')[ob.p_axis == 'Magnitude']
+        fields = ('p_fields', 'p_fields_mag')[ob.p_axis == 'Magnitude']
         layout.prop_search(ob, 'p_shape', wm, 'p_shapes', text="Display Shape")
 
         if ob.p_shape == 'Point':
@@ -1315,7 +1315,7 @@ class Probe(Block):
                 split.row().prop(ob, 'p_disp_pos', text="Pos")
                 split.row().prop(ob, 'p_disp_color', text="Color")
             box = layout.box()
-            units = self.fieldUnits[ob.p_field[0]]
+            units = self.field_units[ob.p_field[0]]
             box.label(text=f"Measurement ({units})")
             value = 'p_value3' if ob.p_axis == 'XYZ' else 'p_value'
             self.measurement_attr_name = value
@@ -1326,7 +1326,7 @@ class Probe(Block):
                 ob,
                 'p_legend_loc',
                 scene,
-                'p_legendLocs',
+                'p_legend_locs',
                 text="Legend location",
             )
 
