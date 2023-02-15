@@ -1325,7 +1325,7 @@ class Probe(Block):
             layout.prop_search(
                 ob,
                 'p_legend_loc',
-                scene,
+                wm,
                 'p_legend_locs',
                 text="Legend location",
             )
@@ -2076,7 +2076,7 @@ class Probe(Block):
                     fig.xlabel = "X"
                 fig.xunit = "m"
                 xs = np.linspace(s * mm, e * mm, self.n)
-                ##print("Line plot: s=", s, "e=", e, "xs=", xs)
+                ##print(f"Line plot: {self.n=} {s=} {e=} {xs=}")
 
             marker = '.' if len(ys) < 50 else None
             label = ob.name
@@ -2181,6 +2181,7 @@ class Sim:
     def __init__(self, context):
         global sims
         sims[context.scene] = self
+        self.context = context
         bpy.app.driver_namespace['fields'] = sims
 
         obs = [
@@ -2468,7 +2469,9 @@ class Sim:
             ##print(f"{stop_ps=} {self.frame_no=} {self.dt=} {current_ps}")
             if stop_ps > 0 and current_ps > stop_ps:
                 print("Reached stop time")
-                field_operator.cancel(bpy.context)
+                ##field_operator.cancel(bpy.context)
+                self.pause()
+                break
             if self.state == STOPPED:
                 ##print("do_step_blocks stopped")
                 break
@@ -2517,10 +2520,17 @@ class Sim:
                 self.do_step_blocks()
         ##print("step_whole_fdtd_gen done")
 
-    def pause(self, context):
+    def pause(self):
         """Tell the server to pause/unpause simulation"""
 
-        context.area.tag_redraw()  # update status line
+        if self.state == RUNNING:
+            print("=== PAUSE ===")
+            self.state = PAUSED
+        else:
+            print("=== UNPAUSE ===")
+            self.state = RUNNING
+
+        self.context.area.tag_redraw()  # update status line
         ack = self.send('D', 1)
         if len(ack) < 1 or ack[0] != ord('A'):
             ##print("non-A ack:", ack)
@@ -2869,14 +2879,8 @@ class FieldPauseOperator(bpy.types.Operator):
         ##print("Pause-FDTD invoke")
         if not sim or sim.state < RUNNING:
             print("FDTD not running")
-        elif sim.state == RUNNING:
-            print("=== PAUSE ===")
-            sim.pause(context)
-            sim.state = PAUSED
-        else:
-            print("=== UNPAUSE ===")
-            sim.pause(context)
-            sim.state = RUNNING
+        sim.context = context
+        sim.pause()
         return {'FINISHED'}
 
     def execute(self, context):
