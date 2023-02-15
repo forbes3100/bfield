@@ -1750,8 +1750,8 @@ Space* Space::spaces;
 
 void Space::insert() {
     // default values
-    zo0 = 1;
-    nzo = 2;
+    zo0 = 12;
+    nzo = 1;
     children = NULL;
     next = spaces;
     spaces = this;
@@ -1995,8 +1995,8 @@ void Space::stepH() {
     }
     if (verbose == 4) {
         // (-2.5, -1.4, -0.2) fields=(-2.2, -1.5, -0.0) --> (-3,1,-2)
-        size_t idx = idxcell(-3,1,-2);
-        printf("%g\n", step*dt);
+        size_t idx = idxcell(2,6,6);
+        printf("VERBOSE4: %g\n", step*dt);
         printCell(idx);
     }
 
