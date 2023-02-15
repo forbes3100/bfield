@@ -1800,6 +1800,10 @@ class Probe(Block):
 
         # send probe request to server
         s = sim.s
+        if s is None:
+            print("Probe: sim socket is closed.")
+            return None
+
         cmd = f"Q {ob.name}"
         if ob.p_verbose > 2:
             print("get_data_from_server:", ob.name, f"cmd='{cmd}'")
@@ -2259,6 +2263,10 @@ class Sim:
         The default is to expect an 'A' ack.
         """
         s = self.s
+        if s is None:
+            print("send: socket closed.")
+            return None
+
         s.send(text.encode("utf-8"))
         if nrecv is None:
             r = s.recv(1)
@@ -2534,6 +2542,8 @@ class Sim:
     def pause(self):
         """Tell the server to pause/unpause simulation"""
 
+        if self.s is None:
+            return
         if self.state == RUNNING:
             print("=== PAUSE ===")
             self.state = PAUSED
@@ -2543,9 +2553,9 @@ class Sim:
 
         self.context.area.tag_redraw()  # update status line
         ack = self.send('D', 1)
-        if len(ack) < 1 or ack[0] != ord('A'):
-            ##print("non-A ack:", ack)
-            return
+        # if len(ack) < 1 or ack[0] != ord('A'):
+        #    print("non-A ack:", ack)
+        #    return
 
     def on_screen_init(self, context):
         """On-screen status display"""
@@ -2583,13 +2593,16 @@ class Sim:
         blf.position(font_id, w - 200 * font_scale, 10, 0)
         blf.color(font_id, 255, 255, 255, 255)
         blf.size(font_id, 12 * font_scale)
-        status = f"{scn.frame_current * self.dt * 1e12:9.3f} ps"
+        current_ps = scn.frame_current * self.dt * 1e12
+        status = f"{current_ps:9.3f} ps"
         if self:
             ##print(f"sim {id(self)} draw_callback: state={self.state}")
             if self.state == PAUSED:
                 status += '  PAUSED'
             elif self.state == STOPPED:
                 status += '  STOPPED'
+            if current_ps >= self.stop_ps:
+                status += ' AT END'
         blf.draw(font_id, status)
 
         # draw mobile-probe measurement value next to mouse pointer
@@ -2818,7 +2831,7 @@ class FieldOperator(bpy.types.Operator):
         )
         ##print("win @", fv(S), fv(E))
         if sim:
-            if sim.state != STOPPED:
+            if sim.state != STOPPED and sim.s is not None:
                 print("Stopping current sim")
                 sim.operator.cancel(context)
         self.sim = Sim(context)
@@ -2839,6 +2852,7 @@ class FieldOperator(bpy.types.Operator):
         if s:
             sim.send('Ex', check=False)
             s.close()
+            sim.s = None
         if self.timer:
             self.stop_timer()
         ##print(f"sim {id(sim)} cancel: state=0")
