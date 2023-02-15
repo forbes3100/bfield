@@ -37,6 +37,7 @@ bool    showAll;    //   show all comparisons
 int     mismatches; // mismatch count
 double  eTotal;     // total error
 double  stopPctThresh; // percentage error above which to stop comparing
+bool    dontPropagateMismatches = false;
 
 dbl3    Etm1, Htm1;  // E & H at previous step, for checkLC
 double3* Elc;
@@ -353,7 +354,16 @@ bool checkLC() {
             }
         }
     }
-    // keep copy of this step's values for next step's mismatch printouts
+    return (mismatches > 0 && 100*eTotal/mismatches > stopPctThresh);
+}
+
+// ----------------------------------------------------------------------------
+// Keep copy of this step's values for next step's mismatch printouts.
+
+void copyTMinus1() {
+    dbl3& E = osp->E;
+    dbl3& H = osp->H;
+
     for (size_t idx = 0; idx < osp->nCells; idx++) {
         Etm1.x[idx] = E.x[idx];
         Etm1.y[idx] = E.y[idx];
@@ -366,7 +376,6 @@ bool checkLC() {
         Elctm1[idx] = Elc[idx];
         Hlctm1[idx] = Hlc[idx];
     }
-    return (mismatches > 0 && 100*eTotal/mismatches > stopPctThresh);
 }
 
 // ----------------------------------------------------------------------------
@@ -509,7 +518,10 @@ void runLCTestSim() {
         missed = checkLC();
         if (missed)
             break;
-        copyLC2Field();
+        if (dontPropagateMismatches) {
+            copyLC2Field();
+        }
+        copyTMinus1();
         osp->stepE();
         osp->stepH();
     }
@@ -980,13 +992,20 @@ void testPlatesm() {
     osp->ncb = 5;
     osp->verbose = 3;
 
-    //loc = double3(6., 6., 9.);
-    //hsize = double3(8., 8., 2.) * 0.5;
+#define AS_IN_LC
+#ifdef AS_IN_LC
+    loc = double3(6., 6., 9.);
+    hsize = double3(8., 8., 2.) * 0.5;
+#else
     loc = double3(6.5, 6.5, 9.5);
     hsize = double3(9., 9., 3.) * 0.5;
+#endif
     new MatBlock("plate0", "M", copper, loc-hsize, loc+hsize);
-    //loc = double3(6., 6., 3.);
+#ifdef AS_IN_LC
+    loc = double3(6., 6., 3.);
+#else
     loc = double3(6.5, 6.5, 3.5);
+#endif
     new MatBlock("plate1", "M", copper, loc-hsize, loc+hsize);
 
     loc = double3(4.5, 6.5, 6.);
@@ -1020,10 +1039,10 @@ Test tests[] = {
     {testSmall, 0},
     {testMedium, 0},
     {testDielectric, 0},
-    {testConductor, 5},
+    {testConductor, 1},
     {testZCoax, 18},
     {testAlpha, 0},
-    {testWall, 2},
+    {testWall, 1},
     {testPlatesm, 64},
 };
 
@@ -1040,34 +1059,34 @@ int main(int argc, const char* argv[]) {
     showAll = true;
 
     try {
-        // set compare to 1 for all tests, 2 for individual test in 'else'
-        if (argc == 2) {
-            for (Test& test: tests) {
-                (test.fn)();
-                if (mismatches != test.wantMiss)
-                    throw new Err("Test '%s' mismatches wrong! expected %d",
-                                  testName, test.wantMiss);
-                else
-                    printf("As expected.\n");
-            }
-            printf("All tests done.\n");
-        } else {
-            //errThresh = 1e-5;
-            //errMin = 1e-99;
-            //showAll = true;
-            //testSmall();      // 0 miss, 2s, hard
-            //testMedium();     // 0 miss, 3s, hard
-            //testDielectric(); // 0 miss, 3s, hard
-            testConductor();  // 0 miss, 3s, hard (wall config only)
-            // TO BE CHECKED AGAIN:
-            //testZCoax();      // 30+ miss, 43.3% err, 2s, soft x0.7654
-            // TO BE CHECKED:
-            //testTrace1sm();   // 48+ miss, 66.7% err, 1s, soft x0.335
-            //testAlpha();      // --
-            //testLarge();      // --
-            //testWall();       // 1+ miss, 73.8% err, 2s, hard x1.685
-            //testPlatesm();    // 80+ miss, 40.2% err, 2s, soft x1.2900
+#if 0
+        // run all tests
+        for (Test& test: tests) {
+            (test.fn)();
+            if (mismatches != test.wantMiss)
+                throw new Err("Test '%s' mismatches wrong! expected %d",
+                              testName, test.wantMiss);
+            else
+                printf("As expected.\n");
         }
+        printf("All tests done.\n");
+#else
+        //errThresh = 1e-5;
+        //errMin = 1e-99;
+        //showAll = true;
+        //testSmall();      // 0 miss, 2s, hard
+        //testMedium();     // 0 miss, 3s, hard
+        //testDielectric(); // 0 miss, 3s, hard
+        //testConductor();  // 0 miss, 3s, hard (wall config only)
+        // TO BE CHECKED AGAIN:
+        //testZCoax();      // 30+ miss, 43.3% err, 2s, soft x0.7654
+        // TO BE CHECKED:
+        //testTrace1sm();   // 48+ miss, 66.7% err, 1s, soft x0.335
+        //testAlpha();      // --
+        //testLarge();      // --
+        //testWall();       // 1+ miss, 73.8% err, 2s, hard x1.685
+        testPlatesm();    // 80+ miss, 40.2% err, 2s, soft x1.2900
+#endif
     } catch (Err* err) {
         err->report();
         exit(-1);
