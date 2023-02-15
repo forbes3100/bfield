@@ -93,7 +93,7 @@ void doCommand(int fd, char* text) {
                 nsteps = atoi(val);
             else if (strcmp(name, "units") == 0)
                 unit = strcmp(val, "mm") == 0 ? 0.001 : 1.;
-            else if (strcmp(name, "usPoll") == 0)
+            else if (strcmp(name, "us_poll") == 0)
                 usPoll = atoi(val);
             //else if (strcmp(name, "verbose") == 0)
             //    verbose = atoi(val);
