@@ -1487,7 +1487,8 @@ class Probe(Block):
                     )
 
         elif shape == 'Line':
-            self.n = nx * ny * nz
+            # length of line, plus 1 since we plot at vertices not segments
+            self.n = nx * ny * nz + 1
 
         elif shape == 'Plane':
             nix, niy = nx, ny
@@ -1728,6 +1729,8 @@ class Probe(Block):
     def send_def(self, update=False):
         ##print("Probe.send_def_gen start ", "PU"[update])
         ob = self.ob
+        dx = self.sim.dx
+        N = self.N
         Bs, Be = self.Bs, self.Be
         field_name = self.field_names_mag[ob.p_field]
         ob.p_axis_sign = 1
@@ -1745,7 +1748,15 @@ class Probe(Block):
         elif ob.p_shape == 'Line':
             if axis in 'ZYX':
                 disp_type = ob.p_axis
-                ##self.n = self.n + 1  # voltage sources include edges ???
+                # line length +1 to include last vertex
+                Be = Be.copy()
+                if N.i > 1:
+                    Be.x += dx
+                elif N.j > 1:
+                    Be.y += dx
+                else:
+                    Be.z += dx
+
         elif ob.p_shape == 'Point':
             disp_type = 'Mag'
             disp_scale = ob.p_plot_scale
@@ -1776,7 +1787,7 @@ class Probe(Block):
             f"{Bs.z:g} {Be.z:g} {field_name} {disp_type[0]} "
             f"{disp_scale:g} {ob.p_sfactor} {ob.p_verbose}"
         )
-        if ob.p_verbose > 1:
+        if ob.p_verbose > 0:
             print(cmd)
         self.sim.send(cmd)
 
