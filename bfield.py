@@ -282,7 +282,7 @@ def get_fields_ob(context, create=True):
     elif len(obs) == 0:
         if not create:
             return
-        if ob.verbose > 0:
+        if ob.verbose >= 1:
             print("Creating", name)
         mesh = bpy.data.meshes.new(name)
         ob = bpy.data.objects.new(name, mesh)
@@ -345,7 +345,7 @@ class Block:
         # object may optionally be snapped to grid
         sob = ob
         snapc = coll_snap.get()
-        if ob.verbose > 0:
+        if ob.verbose >= 1:
             print("Block.init: checking", ob.name, "snap=", ob.snap)
         if ob.snap:
             name = ob.snapped_name
@@ -390,7 +390,7 @@ class Block:
                 if Ss.z < smin:
                     Ss.z = smin
                     Ls.z = Gss.z
-                if ob.verbose > 1:
+                if ob.verbose >= 2:
                     print(sob.name, "Ss, Su=", fv(Ss), fv(Su))
                 sob.location = Ls
                 if not (Su.x == 0 or Su.y == 0 or Su.z == 0):
@@ -401,7 +401,7 @@ class Block:
                             Cu.z * Ss.z / Su.z,
                         )
                     )
-                if ob.verbose > 1:
+                if ob.verbose >= 2:
                     print(sob.name, "loc, scale=", fv(Ls), fv(sob.scale))
 
                 # scn.layers[layerSnap] = True
@@ -412,7 +412,7 @@ class Block:
                 view_layer.update()
 
                 Bs, Be = bounds(sob)
-                if ob.verbose > 1:
+                if ob.verbose >= 2:
                     print(sob.name, "new Bs, Be=", fv(Bs), fv(Be))
 
                 if ob.block_type == 'PROBE':
@@ -463,7 +463,7 @@ class MatBlock(Block):
 
     def send_def_gen(self):
         ob = self.ob
-        if ob.verbose > 0:
+        if ob.verbose >= 1:
             print("MatBlock.send_def_gen")
         Bs, Be = self.Bs, self.Be
         mat = self.get_field_mat()
@@ -481,7 +481,7 @@ class MatBlock(Block):
             f"{Be.x:g} {Bs.y:g} {Be.y:g} {Bs.z:g} {Be.z:g}"
         )
         self.sim.send(cmd)
-        if ob.verbose > 0:
+        if ob.verbose >= 1:
             print(cmd)
         selection = [(Bs, Be)]
         arrayi = 1
@@ -492,7 +492,7 @@ class MatBlock(Block):
             t = mod.type
             if t not in ('BOOLEAN',):
                 if t == 'ARRAY':
-                    if ob.verbose > 0:
+                    if ob.verbose >= 1:
                         print(f" {ob.name} array modifier, {mod.count=}")
                     if not (
                         mod.use_constant_offset
@@ -510,7 +510,7 @@ class MatBlock(Block):
                             nameo = f"{ob.name}[{arrayi:03}]"
                             Bso = Bs + i * offset
                             Beo = Be + i * offset
-                            if ob.verbose > 0:
+                            if ob.verbose >= 1:
                                 print(f" {mod.name} {i} ", end='')
                             cmd = (
                                 f"B{mtype} {nameo} {mat.name} "
@@ -518,7 +518,7 @@ class MatBlock(Block):
                                 f"{Beo.y:g} {Bso.z:g} {Beo.z:g}"
                             )
                             self.sim.send(cmd)
-                            if ob.verbose > 0:
+                            if ob.verbose >= 1:
                                 print(cmd)
                             new_selection.append((Bso, Beo))
                             arrayi += 1
@@ -566,7 +566,7 @@ class MeshMatBlock(MatBlock):
         sim = self.sim
         scn = bpy.context.scene
         dx = sim.dx
-        if ob.verbose > 0:
+        if ob.verbose >= 1:
             print("MeshMatBlock.send_def_gen", ob.name, "start")
 
         # need the snap layer active for Dynamic Paint
@@ -603,12 +603,12 @@ class MeshMatBlock(MatBlock):
                         o.select_set(True)
                         o.hide_viewport = False
                         if m.brush_settings:
-                            if ob.verbose > 1:
+                            if ob.verbose >= 2:
                                 print("deleting", o.name, "Dynamic Paint mod")
                             bpy.ops.object.modifier_remove(modifier=m.name)
                             o.hide_viewport = ohide
                         elif m.canvas_settings:
-                            if ob.verbose > 1:
+                            if ob.verbose >= 2:
                                 print("deleting canvas plane", o.name)
                             bpy.ops.object.delete(use_global=False)
             yield
@@ -616,7 +616,7 @@ class MeshMatBlock(MatBlock):
             # make this object the brush
             dp = ob.modifiers.get("Dynamic Paint")
             if dp is None:
-                if ob.verbose > 1:
+                if ob.verbose >= 2:
                     print("adding brush to", ob.name)
                 bpy.context.view_layer.objects.active = ob
                 bpy.ops.object.modifier_add(type='DYNAMIC_PAINT')
@@ -677,20 +677,20 @@ class MeshMatBlock(MatBlock):
 
             # bake: write Z-slice images of object to png files
             last_fn = csurf.image_output_path + (f"/paintmap{nz:04}.png")
-            if ob.verbose > 1:
+            if ob.verbose >= 2:
                 print("deleting any", last_fn)
             p = bpy.path.abspath(last_fn)
             if os.path.isfile(p):
                 os.unlink(p)
-            if ob.verbose > 1:
+            if ob.verbose >= 2:
                 print("sendVoxels_G: baking canvas", so.name)
             res = bpy.ops.dpaint.bake()
-            if ob.verbose > 1:
+            if ob.verbose >= 2:
                 print("DP bake returned", res)
             yield
             # wait for last file to be (re)created
             while not os.path.isfile(p):
-                if ob.verbose > 1:
+                if ob.verbose >= 2:
                     print("waiting for", last_fn)
                 yield
             ##so.hide_viewport = True
@@ -703,7 +703,7 @@ class MeshMatBlock(MatBlock):
             f"HI {ob.name} {mat.name} {x-r:g} {x+r:g} {y-r:g} {y+r:g} "
             f"{Bs.z:g} {Be.z:g} {nx} {nz}"
         )
-        if ob.verbose > 0:
+        if ob.verbose >= 1:
             print("MeshMatBlock.send_def_gen", ob.name, "done.")
         snapc.hide_viewport = snap_hide_save
 
@@ -732,7 +732,7 @@ class LayerMatBlock(Block):
 
     def send_def_gen(self):
         ob = self.ob
-        if ob.verbose > 0:
+        if ob.verbose >= 1:
             print("LayerMatBlock.send_def_gen", ob.name, "start")
         mesh = ob.data
         mat = mesh.materials[0]
@@ -791,7 +791,7 @@ class FieldsBlock(MatBlock):
 
     def send_sim_def_gen(self):
         ob = self.ob
-        if ob.verbose > 0:
+        if ob.verbose >= 1:
             print("FieldsBlock.send_sim_def_gen")
         yield
         Bs, Be = self.Bs, self.Be
@@ -804,7 +804,7 @@ class FieldsBlock(MatBlock):
             f"F {ob.name} {mat.name} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
             f"{Bs.z:g} {Be.z:g} {sim.dx:g} 1 {sim.pml_border}"
         )
-        if sim.verbose > 1:
+        if sim.verbose >= 2:
             print(cmd)
         self.sim.send(cmd)
 
@@ -863,7 +863,7 @@ class Resistor(MatBlock):
 
     def send_def_gen(self):
         ob = self.ob
-        if ob.verbose > 0:
+        if ob.verbose >= 1:
             print("Resistor.send_def_gen", ob.name, "start")
         for _ in super().send_def_gen():
             yield
@@ -927,7 +927,7 @@ class Capacitor(MatBlock):
 
     def send_def_gen(self):
         ob = self.ob
-        if ob.verbose > 0:
+        if ob.verbose >= 1:
             print(f"Capacitor.send_def_gen{ob.name} start")
         for _ in super().send_def_gen():
             yield
@@ -941,7 +941,7 @@ class SubSpaceBlock(MatBlock):
 
     def send_sim_def_gen(self):
         ob = self.ob
-        if ob.verbose > 0:
+        if ob.verbose >= 1:
             print("SubSpaceBlock.send_sim_def_gen")
         yield
         Bs, Be = self.Bs, self.Be
@@ -950,7 +950,7 @@ class SubSpaceBlock(MatBlock):
             f"G {ob.name} {mat.name} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
             f"{Bs.z:g} {Be.z:g} {ob.parent.name}"
         )
-        if sim.verbose > 1:
+        if sim.verbose >= 2:
             print(cmd)
         self.sim.send(cmd)
 
@@ -1089,14 +1089,14 @@ class Source(Block):
 
     def send_def_gen(self):
         ob = self.ob
-        if ob.verbose > 0:
+        if ob.verbose >= 1:
             print("Source.send_def_gen")
         yield
         Bs, Be = self.Bs, self.Be
         scale = ob.s_scale
         axis = ord(ob.s_axis[-1]) - ord('X')
         dist = (Be.x - Bs.x, Be.y - Bs.y, Be.z - Bs.z)[axis] * mm
-        if ob.verbose > 1:
+        if ob.verbose >= 2:
             print("Source", ob.name, "dist=", dist, "m")
         if ob.s_axis[0] == '-':
             scale *= -1
@@ -1115,7 +1115,7 @@ class Source(Block):
             f"{tu(ob,'s_tstart'):g} {tu(ob,'s_trise'):g} "
             f"{tu(ob,'s_duration'):g} {tu(ob,'s_tfall'):g}"
         )
-        if ob.verbose > 1:
+        if ob.verbose >= 2:
             print(cmd)
         self.sim.send(cmd)
 
@@ -1422,7 +1422,7 @@ class Probe(Block):
     def prepare_gen(self):
         """Create or update a probe's display image, objects, etc."""
         ob = self.ob
-        if ob.p_verbose > 0:
+        if ob.p_verbose >= 1:
             print("Probe.prepare_gen start", self.ob.name)
         yield
         sim = self.sim
@@ -1434,7 +1434,7 @@ class Probe(Block):
         sfactor = ob.p_sfactor
         dx = sim.dx
         self.last_step = -1
-        if ob.p_verbose > 0:
+        if ob.p_verbose >= 1:
             print(f"Probe.prepare_gen for {ob.name}: {dx=:3} {sfactor=}")
 
         # get untrimmed probe dimensions
@@ -1451,14 +1451,14 @@ class Probe(Block):
         B1l, B1u = fover
         Is = IGrid(B1l - Bsf, dx)
         ##print("Probe: ob=", ob.name, "ob.p_verbose=", ob.p_verbose)
-        if ob.p_verbose > 0:
+        if ob.p_verbose >= 1:
             print("B1l.x=", B1l.x, "Bsf.x=", Bsf.x, "dx=", dx)
         Ie = IGrid(B1u - Bsf, dx)
         nx = max(Ie.i - Is.i, 1)
         ny = max(Ie.j - Is.j, 1)
         ##print("ny:", Ie.j, Is.j, ny)
         nz = max(Ie.k - Is.k, 1)
-        if ob.p_verbose > 0:
+        if ob.p_verbose >= 1:
             print(ob.name, "Bsf=", fv(Bsf), "Is=", Is, "Ie=", Ie)
             print(" nx,ny,nz=", nx, ny, nz)
         self.N = IVector(nx, ny, nz)
@@ -1469,7 +1469,7 @@ class Probe(Block):
                 n = 1
                 if ob.p_axis == 'XYZ':
                     n = 3
-                if ob.p_verbose > 0:
+                if ob.p_verbose >= 1:
                     print(ob.name, "single point measurement,", n, "values")
                 self.n = n
                 if self.probe_value_frame_handler in posth:
@@ -1477,7 +1477,7 @@ class Probe(Block):
                 posth.append(self.probe_value_frame_handler)
             else:
                 self.n = nx * ny * nz
-                if ob.p_verbose > 0:
+                if ob.p_verbose >= 1:
                     print(
                         ob.name, "extended (sum) point measurement, n=", self.n
                     )
@@ -1494,7 +1494,7 @@ class Probe(Block):
             elif ny == 1:
                 niy = nz
             n = nix * niy
-            if ob.p_verbose > 0:
+            if ob.p_verbose >= 1:
                 print(f"probe.plane {nix}x{niy}, total size = {n} elements")
             if n < 1 or n > 80000:
                 raise ValueError(f"probe.plane: bad requested data size: {n}")
@@ -1518,7 +1518,7 @@ class Probe(Block):
                             or img.generated_width != rep * nix
                             or img.generated_height != rep * niy
                         ):
-                            if ob.p_verbose > 1:
+                            if ob.p_verbose >= 2:
                                 print(
                                     f"removing old wrong-sized "
                                     f"{img.generated_width}x"
@@ -1532,7 +1532,7 @@ class Probe(Block):
 
             if mat is None:
                 # create a new material with an image texture
-                if ob.p_verbose > 1:
+                if ob.p_verbose >= 2:
                     print(f"Probe: creating {nix}x{niy} image plane")
                 mesh.materials.clear()
                 mat = bpy.data.materials.new(name)
@@ -1579,7 +1579,7 @@ class Probe(Block):
             uvmap = mesh.uv_layers.active
             ud = uvmap.data
 
-            if ob.p_verbose > 0:
+            if ob.p_verbose >= 1:
                 print("nx,ny,nz=", nx, ny, nz)
             if nx == 1:  # project onto X-axis view
                 ##print("assigning X-axis UV map", uvmap.name)
@@ -1642,14 +1642,14 @@ class Probe(Block):
                 raise ValueError(f"probe: bad requested data size: {ne}")
             self.n = ne
             if len(ob.children) != n:
-                if ob.p_verbose > 1:
+                if ob.p_verbose >= 2:
                     print(f"Probe: creating {n} {field_name} arrows")
                 dx2, collection = ((0, E), (dx / 2, H))[field_name == 'H']
                 # Is is parent lower-left index in full grid, Pp is coords
                 Pp = Vector((Is.i * dx, Is.j * dx, Is.k * dx))
                 # D2 is 1/2 cell extra for H, + offset of parent lower left
                 D2 = Vector((dx2, dx2, dx2)) + Vector(ob.bound_box[0])
-                if ob.p_verbose > 1:
+                if ob.p_verbose >= 2:
                     print(ob.name, "D2=", fv(D2), "Is=", Is)
 
                 # delete just probe's arrow-children
@@ -1709,7 +1709,7 @@ class Probe(Block):
                             tmpc.objects.link(arrow)
             self.arrows = list(ob.children)
             self.arrows.sort(key=lambda arrow: arrow.name)
-            if ob.p_verbose > 1:
+            if ob.p_verbose >= 2:
                 print(f"Probe: {len(self.arrows)} arrows")
                 print("Probe: removing keyframes from old arrows")
             for arrow in self.arrows:
@@ -1783,7 +1783,7 @@ class Probe(Block):
             f"{Bs.z:g} {Be.z:g} {field_name} {disp_type[0]} "
             f"{disp_scale:g} {ob.p_sfactor} {ob.p_verbose}"
         )
-        if ob.p_verbose > 0:
+        if ob.p_verbose >= 1:
             print(cmd)
         self.sim.send(cmd)
 
@@ -1801,7 +1801,7 @@ class Probe(Block):
             return None
 
         cmd = f"Q {ob.name}"
-        if ob.p_verbose > 2:
+        if ob.p_verbose >= 3:
             print("get_data_from_server:", ob.name, f"cmd='{cmd}'")
         ack = sim.send(cmd, 7)
         if len(ack) < 1 or ack[0] != ord('A'):
@@ -1828,7 +1828,7 @@ class Probe(Block):
         if len(rnbytes) != 6:
             raise IOError(f"expected 6 digit data length, got '{rnbytes}'")
         rnbytes = int(rnbytes)
-        if ob.p_verbose > 1:
+        if ob.p_verbose >= 2:
             print(f"Probe: expecting {rem} bytes, receiving {rnbytes}")
         if rnbytes != rem:
             raise IOError(
@@ -1844,7 +1844,7 @@ class Probe(Block):
             raise IOError
 
         if step == self.last_step:
-            if ob.p_verbose > 1:
+            if ob.p_verbose >= 2:
                 print("Probe last step", ob.name)
             return None
         self.last_step = step
@@ -1853,10 +1853,10 @@ class Probe(Block):
         if ob.p_sum:
             iaxis = ord(ob.p_axis[-1]) - ord('X')
             data = data[iaxis : iaxis + 1]
-            if ob.p_verbose > 1:
+            if ob.p_verbose >= 2:
                 print("data=", np.frombuffer(data, np.float32))
 
-        if ob.p_verbose > 1:
+        if ob.p_verbose >= 2:
             print(ob.name, "data=", data.shape, data.dtype, "as uint32:")
             np.set_printoptions(formatter={'all': lambda x: f"0x{x:08x}"})
             print(np.frombuffer(data, np.uint32))
@@ -1903,7 +1903,7 @@ class Probe(Block):
             else:
                 if ob.p_field == 'Voltage':
                     # Voltage should only depend on E and dx.
-                    if ob.p_verbose > 1:
+                    if ob.p_verbose >= 2:
                         print("Point", ob.name, "v=", v, "dx=", dx)
                     v *= -dx * ob.p_axis_sign
 
@@ -2041,7 +2041,7 @@ class Probe(Block):
         """Cmd-P: Plot all point probe value histories"""
         ob = self.ob
         sim = self.sim
-        if ob.p_verbose > 0:
+        if ob.p_verbose >= 1:
             print("Probe.plot", ob.name)
         if (ob.p_shape == 'Point' and self.history) or ob.p_shape == 'Line':
             if ob.p_shape == 'Point':
@@ -2209,7 +2209,7 @@ class Sim:
         self.fields_ob = fob = self.fields_block.ob
         self.verbose = fob.verbose
         print("Verbosity level", self.verbose)
-        if self.verbose > 0:
+        if self.verbose >= 1:
             print("Sim init: have fob", fob.name)
         self.tms = int(time.time() * 1000)
         ##print(f"sim {id(self)} init: state=0")
@@ -2341,13 +2341,13 @@ class Sim:
         self.nx = ma.floor(ob.dimensions.x / ob.dx)
         self.ny = ma.floor(ob.dimensions.y / ob.dx)
         self.nz = ma.floor(ob.dimensions.z / ob.dx)
-        if ob.verbose > 0:
+        if ob.verbose >= 1:
             print("Fields nx,ny,nz=", self.nx, self.ny, self.nz)
 
     def create_blocks_gen(self):
         """Generator to create sim-blocks for all visible blocks within Fields."""
         fob = self.fields_ob
-        if fob.verbose > 0:
+        if fob.verbose >= 1:
             print("create_blocks_gen start")
         self.blocks = [self.fields_block]
         obs = list(bpy.context.visible_objects)
@@ -2365,32 +2365,32 @@ class Sim:
                 print("createBlocks: object reference error:", ob)
                 continue
 
-            if fob.verbose > 1:
+            if fob.verbose >= 2:
                 print("createBlocks object", ob.name)
             block = None
             bt = ob.get('block_type')
 
             block_class = block_classes.get(bt)
-            if fob.verbose > 1:
+            if fob.verbose >= 2:
                 print(
                     "createBlocks:", ob.name, bt, block_class, ob.hide_viewport
                 )
             if ob.snap:
-                if fob.verbose > 1:
+                if fob.verbose >= 2:
                     print("Block", ob.name, "is snap")
                 have_snap = True
             if block_class and not ob.hide_viewport:
-                if fob.verbose > 1:
+                if fob.verbose >= 2:
                     print("  createBlocks verified", ob.name)
                 over = overlap(fob, ob)
                 if not over:
-                    if fob.verbose > 1:
+                    if fob.verbose >= 2:
                         print("no overlap for", ob.name)
                 if over:
                     # create block for object or optional snapped object
                     block = block_class(ob, self)
                     ob = block.ob
-                    if fob.verbose > 1:
+                    if fob.verbose >= 2:
                         print("=====", ob.name, bt, block_class)
                         print("  overlap=", fv(over[0]), fv(over[1]))
                     for _ in block.prepare_gen():
@@ -2399,7 +2399,7 @@ class Sim:
 
         scn.frame_set(1)
         if have_snap:
-            if fob.verbose > 1:
+            if fob.verbose >= 2:
                 print("createBlocks end: have_snap")
             ##coll_main.get().hide_viewport = True
             coll_snap.get().hide_viewport = False
@@ -2412,7 +2412,7 @@ class Sim:
 
     def send_f_material(self, ob, m):
         self.fmats.append(m)
-        if ob.verbose > 1:
+        if ob.verbose >= 2:
             print(" adding fmat", m.name)
         self.send(f"M {m.name} {m.mur:g} {m.epr:g} {m.sige:g} 0")
 
@@ -2423,7 +2423,7 @@ class Sim:
         self.fmats = fmats = []
         for block in self.blocks:
             ob = block.ob
-            if ob.verbose > 1:
+            if ob.verbose >= 2:
                 print("checking", ob.name, "for FDTD material")
             link = 'DATA'
             if ob.material_slots:
@@ -2458,7 +2458,7 @@ class Sim:
         """Process one timestep of each sim block"""
 
         scn = bpy.context.scene
-        if self.verbose > 0:
+        if self.verbose >= 1:
             tms = int(time.time() * 1000)
             dtms = tms - self.tms
             self.tms = tms
@@ -2496,7 +2496,7 @@ class Sim:
 
         # tell simulator to chdir to blender file's directory
         cmd = f"C {cwd()}"
-        if self.verbose > 1:
+        if self.verbose >= 2:
             print(cmd)
         self.send(cmd)
         yield
@@ -2671,7 +2671,7 @@ class FieldOperator(bpy.types.Operator):
         ob = bpy.context.object
         name = ob.name if ob else "<no object>"
         ##print("dyn_probe:", action, name, ob.p_verbose)
-        if ob and ob.p_verbose > 0:
+        if ob and ob.p_verbose >= 1:
             print("dyn_probe:", action, name)
         sim = self.sim
         if ob and ob.get('block_type') == 'PROBE':
@@ -2687,12 +2687,12 @@ class FieldOperator(bpy.types.Operator):
                     )
                 else:
                     if action == 'START':
-                        if ob.p_verbose > 0:
+                        if ob.p_verbose >= 1:
                             print("dyn_probe: starting move", ob.name)
                         self.probe_drag = ob
                         self.ob_rel_mouse = Vector(ob.location) - Vector(loc)
                     elif action == 'MOVE':
-                        if ob.p_verbose > 0:
+                        if ob.p_verbose >= 1:
                             print("dyn_probe: moving", ob.name, pblock)
                         # ob_new_loc = self.ob_rel_mouse + Vector(loc)
                         ###print("ob_new_loc=", fv(ob_new_loc))
@@ -2709,7 +2709,7 @@ class FieldOperator(bpy.types.Operator):
                         pblock.last_step -= 1
                         pblock.do_step()
                     else:
-                        if ob.p_verbose > 1:
+                        if ob.p_verbose >= 2:
                             print("dyn_probe: move done")
                         self.probe_drag = None
         return {'RUNNING_MODAL'}
@@ -2725,7 +2725,7 @@ class FieldOperator(bpy.types.Operator):
         ##if in_win and not event.type in ('TIMER'):
         ##    print("event:", event.value, event.type, "oskey=", event.oskey)
 
-        if sim.verbose > 1 and event.type == 'P':
+        if sim.verbose >= 2 and event.type == 'P':
             print(f"'P', oskey={event.oskey} value={event.value}")
         if event.value == 'PRESS':
             if not in_win:
@@ -2782,7 +2782,7 @@ class FieldOperator(bpy.types.Operator):
                 try:
                     sim.gen.__next__()
                 except StopIteration:
-                    if sim.verbose > 1:
+                    if sim.verbose >= 2:
                         print("modal: timer: step_whole_fdtd_gen done")
                 except IOError:
                     print("Timer IOError exception")
