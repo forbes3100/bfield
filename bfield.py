@@ -1105,8 +1105,15 @@ class Source(Block):
             # convert voltage across source to E field strength
             ex = 'E'
             scale /= dist
-            if not ob.s_hard:
-                scale *= 2  # assume load matches Rs, dividing Vs by two
+            ##if not ob.s_hard:
+            ##    scale *= 2  # assume load matches Rs, dividing Vs by two
+        if ex == 'E':
+            if ob.s_hard:
+                # want E field to point away from + end of source
+                scale *= -1
+            else:
+                # TODO: soft probe: why scale/1000? and why not -1?
+                scale /= 1000
 
         cmd = (
             f"S {ob.name} {ex} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
@@ -1742,16 +1749,18 @@ class Probe(Block):
             else:
                 disp_type = 'Mag'
         elif ob.p_shape == 'Line':
-            if axis in 'ZYX':
+            if axis == 'Magnitude':
+                disp_type = 'Mag'
+            elif axis in 'ZYX':
                 disp_type = ob.p_axis
-                # line length +1 to include last vertex
-                Be = Be.copy()
-                if N.i > 1:
-                    Be.x += dx
-                elif N.j > 1:
-                    Be.y += dx
-                else:
-                    Be.z += dx
+            # line length +1 to include last vertex
+            Be = Be.copy()
+            if N.i > 1:
+                Be.x += dx
+            elif N.j > 1:
+                Be.y += dx
+            else:
+                Be.z += dx
 
         elif ob.p_shape == 'Point':
             disp_type = 'Mag'
@@ -1785,6 +1794,7 @@ class Probe(Block):
         )
         if ob.p_verbose >= 1:
             print(cmd)
+            print(f"{self.n=}")
         self.sim.send(cmd)
 
     def get_data_from_server(self):
@@ -1905,6 +1915,7 @@ class Probe(Block):
                     # Voltage should only depend on E and dx.
                     if ob.p_verbose >= 2:
                         print("Point", ob.name, "v=", v, "dx=", dx)
+                    # negate because E field points away from +
                     v *= -dx * ob.p_axis_sign
 
                 ob.p_value = v
@@ -2097,8 +2108,12 @@ class Probe(Block):
                 xs.copy(), ys.copy(), marker=marker, color=color, label=label
             )
             plt.legend(loc=ob.p_legend_loc)
-            fn = ob.p_field
-            fig.ylabel = f"{fn.capitalize()} (%s{self.field_units[fn[0]]})"
+            fn = ob.p_field.capitalize()
+            fn0 = fn[0]
+            if ob.p_axis not in ('XYZ', 'Magnitude'):
+                # include axis name as a subscript to field name
+                fn = f"${fn}_{{{ob.p_axis}}}$"
+            fig.ylabel = f"{fn} (%s{self.field_units[fn0]})"
             fig.max_x = max(xs[-1], fig.max_x)
             fig.min_y = min(ys.min(), fig.min_y)
             fig.max_y = max(ys.max(), fig.max_y)
@@ -2137,8 +2152,8 @@ class Probe(Block):
                 units_y = ''
             scale_x = si.SIPowers.get(units_x)
             scale_y = si.SIPowers.get(units_y)
-            ##print(f"{fig.min_y=} {fig.max_y=} {range_y=} {y_si=} "
-            ##      f"{units_y=} {scale_y=}")
+            ##print(f"{fig.min_y=} {fig.max_y=} {range_y=} {y_si=}")
+            ##print(f"{fig.ylabel=} {units_y=} {scale_y=}")
             if scale_x is not None:
                 ##print(f"Scaling plot X axis by {10**scale_x:g} ({units_x})")
                 if 0:
@@ -2157,6 +2172,8 @@ class Probe(Block):
             plt.xlabel(f"{fig.xlabel} ({units_x}{fig.xunit})")
             yl = fig.ylabel % units_y
             yl = yl.replace("kV/m", "V/mm").replace("kA/m", "A/mm")
+            params = {'mathtext.default': 'regular'}
+            plt.rcParams.update(params)
             plt.ylabel(yl)
             plt.grid(True)
             plt.subplots_adjust(left=0.15, top=0.95, right=0.95)
