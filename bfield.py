@@ -1112,7 +1112,7 @@ class Source(Block):
                 # want E field to point away from + end of source
                 scale *= -1
             else:
-                # TODO: soft probe: why scale/1000? and why not -1?
+                # TODO: soft source: why scale/1000? and why not -1?
                 scale /= 1000
 
         cmd = (
@@ -2923,9 +2923,10 @@ class FieldPlotOperator(bpy.types.Operator):
 
     def invoke(self, context, event):
         global sims
+        self.isCmdP = event.type == 'P'
         sim = sims[context.scene]
         ##print("Plot-FDTD invoke")
-        print("\nCmd-P: plot")
+        print(f"\nPlot probes")
         if not sim:
             print("FDTD hasn't been run")
             return {'FINISHED'}
@@ -2939,7 +2940,11 @@ class FieldPlotOperator(bpy.types.Operator):
 
     def modal(self, context, event):
         # wait for Cmd key to be released, or plot window messes oskey state
-        if is_linux or (event.type == 'OSKEY' and event.value == 'RELEASE'):
+        if (
+            is_linux
+            or not self.isCmdP
+            or (event.type == 'OSKEY' and event.value == 'RELEASE')
+        ):
             print("finishing plot")
             Probe.plot_all_finish()
             return {'FINISHED'}
