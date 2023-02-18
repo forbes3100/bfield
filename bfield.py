@@ -275,12 +275,14 @@ def start_xcode():
     print(p.returncode, stdout, stderr)
 
 
-def get_fields_ob(context, create=True):
+def get_fields_ob(context, create=True, no_raise=False):
     name = "0Fields"
     obs = [ob for ob in context.visible_objects if ob.name.startswith(name)]
     if len(obs) == 1:
         ob = obs[0]
     else:
+        if no_raise:
+            return None
         raise RuntimeError(f"Expected a single {name} object in scene")
     return ob
 
@@ -2971,7 +2973,11 @@ class FieldObjectPanel(bpy.types.Panel):
         scene = context.scene
         wm = bpy.context.window_manager
         ob = context.object
-        fob = get_fields_ob(bpy.context, create=False)
+        fob = get_fields_ob(bpy.context, create=False, no_raise=True)
+        if fob is None:
+            box = layout.box()
+            box.label(text="Requires a single '0Fields' object")
+            return
         layout.prop_search(
             ob, "block_type", wm, "block_types", text="Block type"
         )
