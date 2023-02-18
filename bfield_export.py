@@ -48,8 +48,8 @@ ob_bfield_attrs = (
     ('p_sfactor', 1),
     ('p_shape', 'Plane'),
     ('p_sum', False),
-    ('p_value', 0.0),
-    ('p_value3', (0.0, 0.0, 0.0)),
+    # ('p_value', 0.0),
+    # ('p_value3', (0.0, 0.0, 0.0)),
     ('p_verbose', 0),
     ('pml_border', 4),
     ('res_units', 'ohms'),
@@ -126,31 +126,39 @@ def export_ob(ob, out):
 
     s = ""
     data = ob.data
-    if data and type(data) == bpy.types.Mesh:
-        vert_lines = "\n".join(
-            [f"  {repr_vec(tuple(v.co))}," for v in data.vertices]
-        )
-
-        if data.polygons:
-            part_name = 'face'
-            part_lines = "\n".join(
-                [f"  {tuple(p.vertices)}," for p in data.polygons.values()]
-            )
-        else:
-            part_name = 'edge'
-            part_lines = "\n".join(
-                [f"  {tuple(p.vertices)}," for p in data.edges.values()]
+    if data:
+        ty = type(data)
+        if ty == bpy.types.Mesh:
+            vert_lines = "\n".join(
+                [f"  {repr_vec(tuple(v.co))}," for v in data.vertices]
             )
 
-        s += f"""{ob.block_type.lower()} '{ob.name}'
+            if data.polygons:
+                part_name = 'face'
+                part_lines = "\n".join(
+                    [f"  {tuple(p.vertices)}," for p in data.polygons.values()]
+                )
+            else:
+                part_name = 'edge'
+                part_lines = "\n".join(
+                    [f"  {tuple(p.vertices)}," for p in data.edges.values()]
+                )
+
+            s += f"""{ob.block_type.lower()} '{ob.name}'
  verts = [
 {vert_lines}
  ]
  {part_name}s = [
 {part_lines}
  ]
- loc = {repr_vec(ob.location)}
-"""
+ """
+        else:
+            raise ValueError(f"{ob.name} has unknown data type {ty}")
+    else:
+        # type 'Empty'
+        s += f"{ob.block_type.lower()} '{ob.name}'\n"
+
+    s += f"loc = {repr_vec(ob.location)}\n"
 
     if ob.parent:
         s += f" parent '{ob.parent.name}'\n"
