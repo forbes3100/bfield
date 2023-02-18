@@ -574,11 +574,12 @@ probe '9Ez.psm'
  p_axis = 'Magnitude'
  p_shape = 'Line'
 
+probe '9Point.psm'
+loc = (5.0, 5.0, 5.0)
  colls = [
   'Main.psm',
  ]
  p_shape = 'Point'
- p_value3 = (-0.24095, 0.19522, -249.48773)
 
 probe '9Vsrc.psm'
  verts = [
@@ -596,7 +597,6 @@ probe '9Vsrc.psm'
  p_field = 'Voltage'
  p_shape = 'Point'
  p_sum = True
- p_value = 0.99981
 
 coll 'E.psm'
 

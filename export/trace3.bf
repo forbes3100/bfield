@@ -6626,6 +6626,8 @@ probe '8ArrowsHtr.T3'
  p_shape = 'Volume'
  us_poll = 10
 
+probe '8ProbeV'
+loc = (2.6, 0.1, 0.83934)
  colls = [
   'Main.T3',
  ]
@@ -6648,7 +6650,6 @@ probe '8V_X2p0.T3'
  p_field = 'Voltage'
  p_shape = 'Point'
  p_sum = True
- p_value = 0.01568
 
 probe '8V_X3p7.T3'
  verts = [
@@ -6668,7 +6669,6 @@ probe '8V_X3p7.T3'
  p_field = 'Voltage'
  p_shape = 'Point'
  p_sum = True
- p_value = 0.00647
 
 probe '8V_X3p7_tall.T3'
  verts = [
@@ -6687,7 +6687,6 @@ probe '8V_X3p7_tall.T3'
  p_field = 'Voltage'
  p_shape = 'Point'
  p_sum = True
- p_value = 0.02054
 
 probe '8V_X4p2.T3'
  verts = [
@@ -6707,7 +6706,6 @@ probe '8V_X4p2.T3'
  p_field = 'Voltage'
  p_shape = 'Point'
  p_sum = True
- p_value = 0.20242
 
 probe '8V_X4p2_tall.T3'
  verts = [
@@ -6725,7 +6723,6 @@ probe '8V_X4p2_tall.T3'
  p_field = 'Voltage'
  p_shape = 'Point'
  p_sum = True
- p_value = 0.00364
 
 probe '8V_X6p0.T3'
  verts = [
@@ -6760,7 +6757,6 @@ probe '8V_Xm0p5.T3'
  p_field = 'Voltage'
  p_shape = 'Point'
  p_sum = True
- p_value = 0.34798
 
 source '9Src.T3'
  verts = [
