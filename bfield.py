@@ -279,27 +279,8 @@ def get_fields_ob(context, create=True):
     obs = [ob for ob in context.visible_objects if ob.name.startswith(name)]
     if len(obs) == 1:
         ob = obs[0]
-    elif len(obs) == 0:
-        if not create:
-            return
-        if ob.verbose >= 1:
-            print("Creating", name)
-        mesh = bpy.data.meshes.new(name)
-        ob = bpy.data.objects.new(name, mesh)
-        bpy.context.scene.objects.link(ob)
-        sz = 16.0
-        mesh.from_pydata(((0, 0, 0), (sz, sz, sz)), [], [])
-        mesh.update()
-        ob.show_texture_space = True
-
-        # put this object in the Main collection
-        ##ob.layers = [i == layerMain for i in range(20)]
-        print(f"{name} to Main collection {coll_main.name()}")
-        coll_main.get().objects.link(ob)
-
-        ob.select_set(True)
     else:
-        raise RuntimeError('Expected a single Field object in scene')
+        raise RuntimeError(f"Expected a single {name} object in scene")
     return ob
 
 
