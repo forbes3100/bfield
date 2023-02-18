@@ -46,6 +46,7 @@ from subprocess import Popen, PIPE
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import siunits as si
+import bfield_export
 
 is_linux = os.uname()[0] == 'Linux'
 
@@ -2945,69 +2946,14 @@ class FieldCenterOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 
-def export_scene_x3d():
-    # unhide all collections and objects, keeping lists
-    hidden = []
-    hidden_vp = []
-    coll_hidden_vp = []
-    for coll in bpy.data.collections:
-        if coll.hide_viewport:
-            coll_hidden_vp.append(coll)
-            coll.hide_viewport = False
-    for ob in bpy.data.objects:
-        if ob.hide_get():
-            hidden.append(ob)
-            ob.hide_set(False)
-        if ob.hide_viewport:
-            hidden_vp.append(ob)
-            ob.hide_viewport = False
-
-    # refresh viewport to update status line
-    bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-
-    # export as x3d file
-    dir = os.path.join(cwd(), 'scenes_x3d')
-    if not os.path.exists(dir):
-        os.mkdir(dir)
-    base = os.path.basename(bpy.data.filepath)
-    base = os.path.splitext(base)[0]
-    name = f"{base}_{bpy.context.scene.name}.x3d"
-    ##print(f"Writing {name} to {dir}")
-    filepath = os.path.join(dir, name)
-    bpy.ops.export_scene.x3d(filepath=filepath)
-
-    # rehide hidden collections and objects
-    for ob in hidden:
-        ob.hide_set(True)
-    for ob in hidden_vp:
-        ob.hide_viewport = True
-    for coll in coll_hidden_vp:
-        coll.hide_viewport = True
-
-
 class FieldExportOperator(bpy.types.Operator):
-    """Export scene as .x3d file"""
+    """Export as .bf file"""
 
     bl_idname = "fdtd.export"
-    bl_label = "Export scene as x3d"
+    bl_label = "Export as bf"
 
     def invoke(self, context, event):
-        export_scene_x3d()
-        return {'FINISHED'}
-
-
-class FieldExportAllOperator(bpy.types.Operator):
-    """Export all scenes as .x3d files"""
-
-    bl_idname = "fdtd.export_all"
-    bl_label = "Export all as x3ds"
-
-    def invoke(self, context, event):
-        cur_scene = bpy.context.window.scene
-        for scene in bpy.data.scenes:
-            bpy.context.window.scene = scene
-            export_scene_x3d()
-        bpy.context.window.scene = cur_scene
+        bfield_export.export()
         return {'FINISHED'}
 
 
@@ -3064,7 +3010,6 @@ class FieldObjectPanel(bpy.types.Panel):
         layout.operator("fdtd.clean")
         layout.operator("fdtd.center")
         layout.operator("fdtd.export")
-        layout.operator("fdtd.export_all")
 
 
 def populate_types():
@@ -3151,7 +3096,6 @@ operators_panels = (
     FieldPlotOperator,
     FieldCenterOperator,
     FieldExportOperator,
-    FieldExportAllOperator,
     FieldObjectPanel,
     FieldMatPanel,
 )

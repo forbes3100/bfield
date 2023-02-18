@@ -55,7 +55,7 @@ To insure that these are all installed, type:
 	(cd to your bfield directory)
 	mkdir scripts
 	ln -s /opt/homebrew/lib/python3.10/site-packages scripts/modules
-	cp siunits.py scripts/modules/
+	cp siunits.py bfield_export.py scripts/modules/
 
 **Linux**:
 
@@ -65,7 +65,7 @@ To insure that these are all installed, type:
 	(cd to your bfield directory)
 	mkdir scripts
 	ln -s ~/.local/lib/python3.10/site-packages scripts/modules
-	cp siunits.py scripts/modules/
+	cp siunits.py bfield_export.py scripts/modules/
     
 In Blender, set Edit>Preferences>File Paths>Data>Scripts to the path of this scripts directory. Then go up a level and into Add-ons, set the filter to "User", click Install, choose the bfield.py file in your bfield directory, and click Install Add-on. Close Preferences and quit and restart Blender.
 
