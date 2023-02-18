@@ -20,10 +20,11 @@ import os
 import bpy
 from mathutils import Vector, Euler
 
+error_count = 0
+
 # Blender object attributes added by BField, with default values
 ob_bfield_attrs = (
     ('axis', 'X'),
-    ('block_type', ''),
     ('cap_units', 'pf'),
     ('capacitance', 1.0),
     ('dx', 1.0),
@@ -99,7 +100,7 @@ def export_header(out):
             alpha = node.inputs['Alpha'].default_value
         s += f""" color = {repr_vec(color)}
  alpha = {repr_1(alpha)}
- fake = {int(mat.use_fake_user)}
+ fake = {mat.use_fake_user}
 """
         for attr in ('epr', 'mur', 'sige'):
             if hasattr(mat, attr):
@@ -110,15 +111,18 @@ def export_header(out):
 
 def export_ob(ob, out):
     """Write out a BField object definition, others ignored"""
+    global error_count
     block_type = getattr(ob, 'block_type')
     if block_type is None or block_type == '':
         # ignore non-BField objects
         return
 
     if ob.rotation_euler != Euler((0.0, 0.0, 0.0), 'XYZ'):
-        raise ValueError(f"Object {ob.name} needs Apply Rotation!")
+        print(f"**** Error: Object {ob.name} needs Apply Rotation!")
+        error_count += 1
     if ob.scale != Vector((1.0, 1.0, 1.0)):
-        raise ValueError(f"Object {ob.name} needs Apply Scale!")
+        print(f"**** Error: Object {ob.name} needs Apply Scale!")
+        error_count += 1
 
     s = ""
     data = ob.data
@@ -127,23 +131,44 @@ def export_ob(ob, out):
             [f"  {repr_vec(tuple(v.co))}," for v in data.vertices]
         )
 
-        face_lines = "\n".join(
-            [f"  {tuple(p.vertices)}," for p in data.polygons.values()]
-        )
+        if data.polygons:
+            part_name = 'face'
+            part_lines = "\n".join(
+                [f"  {tuple(p.vertices)}," for p in data.polygons.values()]
+            )
+        else:
+            part_name = 'edge'
+            part_lines = "\n".join(
+                [f"  {tuple(p.vertices)}," for p in data.edges.values()]
+            )
 
-        s += f"""mesh '{ob.name}'
+        s += f"""{ob.block_type.lower()} '{ob.name}'
  verts = [
 {vert_lines}
  ]
- faces = [
-{face_lines}
+ {part_name}s = [
+{part_lines}
  ]
  loc = {repr_vec(ob.location)}
 """
-    ## data.uv_layers["UVMap"].data.items()
+
+    if ob.parent:
+        s += f" parent '{ob.parent.name}'\n"
+
+    colls = ob.users_collection
+    if colls:
+        s += " colls = [\n"
+        for coll in colls:
+            s += f"  '{coll.name}',\n"
+        s += " ]\n"
 
     if ob.hide_get():
-        s += " hide 1\n"
+        s += " hide = True\n"
+    if ob.hide_viewport:
+        s += " hide_viewport = True\n"
+    dt = ob.display_type
+    if dt != 'TEXTURED':
+        s += f" display_type = '{dt}'\n"
 
     m = getattr(ob, 'active_material')
     if m:
@@ -164,8 +189,57 @@ def export_ob(ob, out):
     out.write(s)
 
 
+def export_coll(coll, out):
+    if coll.name == 'Tmp':
+        return
+    s = f"coll '{coll.name}'\n"
+
+    if coll.objects:
+        s += " objects = [\n"
+        for ob_name in coll.objects.keys():
+            s += f"  '{ob_name}',\n"
+        s += " ]\n"
+
+    color = coll.color_tag
+    if color != 'NONE':
+        s += f" color = '{color}'\n"
+    ##if coll.hide_get():   # where?
+    ##    s += " hide = True\n"
+    if coll.hide_viewport:
+        s += " hide_viewport = True\n"
+
+    s += "\n"
+    out.write(s)
+
+
+def export_scene(scene, out):
+    s = f"""scene '{scene.name}'
+ colls = [
+"""
+    top_coll = scene.collection
+    for coll_name in top_coll.children.keys():
+        s += f"  '{coll_name}',\n"
+    s += " ]\n"
+
+    top_obs = []
+    for ob in scene.objects:
+        if top_coll in ob.users_collection:
+            top_obs.append(ob)
+    if top_obs:
+        s += " objects = [\n"
+        for ob in top_obs:
+            s += f"  '{ob.name}',\n"
+        s += " ]\n"
+
+    s += "\n"
+    out.write(s)
+
+
 def export():
     """Export all to a .bf file"""
+    global error_count
+
+    error_count = 0
     cwd, blend_name = os.path.split(bpy.data.filepath)
     name = os.path.splitext(blend_name)[0]
     out_name = f"{name}.bf"
@@ -181,10 +255,21 @@ version 1
 """
     )
     export_header(out)
+
     for ob in bpy.data.objects:
         export_ob(ob, out)
+
+    for coll in bpy.data.collections:
+        export_coll(coll, out)
+
+    for scene in bpy.data.scenes:
+        export_scene(scene, out)
+
     out.close()
     print(f"Wrote {out_path}.")
+
+    if error_count:
+        raise ValueError(f"{error_count} errors: see log")
 
 
 # export()

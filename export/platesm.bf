@@ -4,7 +4,7 @@ version 1
 mat '8Ez4y.psm'
  color = (0.8, 0.8, 0.8, 1.0)
  alpha = 1.0
- fake = 0
+ fake = False
  epr = 1
  mur = 1
  sige = 0
@@ -12,7 +12,7 @@ mat '8Ez4y.psm'
 mat '8Hz4x.psm'
  color = (0.8, 0.8, 0.8, 1.0)
  alpha = 1.0
- fake = 0
+ fake = False
  epr = 1
  mur = 1
  sige = 0
@@ -20,7 +20,7 @@ mat '8Hz4x.psm'
 mat 'Air'
  color = (0.5, 0.5, 1.0, 0.1)
  alpha = 0.1
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 0
@@ -28,7 +28,7 @@ mat 'Air'
 mat 'Brass'
  color = (0.45, 0.3, 0.03, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 7e+07
@@ -36,7 +36,7 @@ mat 'Brass'
 mat 'Brass-T'
  color = (0.45, 0.3, 0.03, 1.0)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 7e+07
@@ -44,7 +44,7 @@ mat 'Brass-T'
 mat 'BrassLC'
  color = (0.45, 0.3, 0.03, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 1.5e+07
@@ -52,7 +52,7 @@ mat 'BrassLC'
 mat 'BrassLC-T'
  color = (0.45, 0.3, 0.03, 1.0)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 1.5e+07
@@ -60,7 +60,7 @@ mat 'BrassLC-T'
 mat 'Carbon_50-T'
  color = (0.02029, 0.01681, 0.0185, 1.0)
  alpha = 0.5
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 20
@@ -68,7 +68,7 @@ mat 'Carbon_50-T'
 mat 'Cast Iron'
  color = (0.81, 0.75, 0.6, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 60
  sige = 0
@@ -76,7 +76,7 @@ mat 'Cast Iron'
 mat 'Cast Iron-T'
  color = (0.81, 0.75, 0.6, 1.0)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 1
  mur = 60
  sige = 0
@@ -84,7 +84,7 @@ mat 'Cast Iron-T'
 mat 'Ceramic'
  color = (0.81, 0.75, 0.6, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 38
  mur = 1
  sige = 0
@@ -92,7 +92,7 @@ mat 'Ceramic'
 mat 'Ceramic-T'
  color = (0.81, 0.75, 0.6, 1.0)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 38
  mur = 1
  sige = 0
@@ -100,7 +100,7 @@ mat 'Ceramic-T'
 mat 'Copper'
  color = (0.45, 0.14, 0.06, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 9.8e+07
@@ -108,7 +108,7 @@ mat 'Copper'
 mat 'Copper-T'
  color = (0.45, 0.14, 0.06, 1.0)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 9.8e+07
@@ -116,7 +116,7 @@ mat 'Copper-T'
 mat 'CopperLC'
  color = (0.45, 0.14, 0.06, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 5.8e+07
@@ -124,7 +124,7 @@ mat 'CopperLC'
 mat 'CopperLC-T'
  color = (0.45, 0.14, 0.06, 1.0)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 5.8e+07
@@ -132,7 +132,7 @@ mat 'CopperLC-T'
 mat 'CopperTinned'
  color = (0.42, 0.42, 0.42, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 9.8e+07
@@ -140,7 +140,7 @@ mat 'CopperTinned'
 mat 'CopperTinned-T'
  color = (0.42, 0.42, 0.42, 1.0)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 9.8e+07
@@ -148,7 +148,7 @@ mat 'CopperTinned-T'
 mat 'Epoxy'
  color = (0.05, 0.05, 0.05, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 2.7
  mur = 1
  sige = 0
@@ -156,7 +156,7 @@ mat 'Epoxy'
 mat 'Epoxy-T'
  color = (0.05, 0.05, 0.05, 1.0)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 2.7
  mur = 1
  sige = 0
@@ -164,7 +164,7 @@ mat 'Epoxy-T'
 mat 'Ferrite'
  color = (0.81, 0.75, 0.6, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1000
  sige = 0.01
@@ -172,7 +172,7 @@ mat 'Ferrite'
 mat 'Ferrite-T'
  color = (0.81, 0.75, 0.6, 1.0)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 1
  mur = 1000
  sige = 0.01
@@ -180,7 +180,7 @@ mat 'Ferrite-T'
 mat 'FieldE'
  color = (0.0, 0.0, 1.0, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 0
@@ -188,7 +188,7 @@ mat 'FieldE'
 mat 'FieldH'
  color = (1.0, 0.0, 0.0, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 0
@@ -196,7 +196,7 @@ mat 'FieldH'
 mat 'FieldJ'
  color = (0.0, 1.0, 1.0, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 0
@@ -204,7 +204,7 @@ mat 'FieldJ'
 mat 'FieldM'
  color = (0.0, 1.0, 0.0, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 0
@@ -212,7 +212,7 @@ mat 'FieldM'
 mat 'FR4'
  color = (0.73, 0.8, 0.39, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 4.4
  mur = 1
  sige = 0
@@ -220,7 +220,7 @@ mat 'FR4'
 mat 'FR4-T'
  color = (0.73, 0.8, 0.39, 1.0)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 4.4
  mur = 1
  sige = 0
@@ -228,7 +228,7 @@ mat 'FR4-T'
 mat 'Iron'
  color = (0.81, 0.75, 0.6, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 3800
  sige = 1e+06
@@ -236,7 +236,7 @@ mat 'Iron'
 mat 'Iron-T'
  color = (0.81, 0.75, 0.6, 1.0)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 1
  mur = 3800
  sige = 1e+06
@@ -244,7 +244,7 @@ mat 'Iron-T'
 mat 'Metal'
  color = (0.45, 0.14, 0.06, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 3.27e+07
@@ -252,7 +252,7 @@ mat 'Metal'
 mat 'Metal-T'
  color = (0.45, 0.14, 0.06, 1.0)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 3.27e+07
@@ -260,7 +260,7 @@ mat 'Metal-T'
 mat 'Porcelain'
  color = (0.81, 0.75, 0.6, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 5
  mur = 1
  sige = 1e-13
@@ -268,7 +268,7 @@ mat 'Porcelain'
 mat 'Porcelain-T'
  color = (0.81, 0.75, 0.6, 1.0)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 5
  mur = 1
  sige = 1e-13
@@ -276,7 +276,7 @@ mat 'Porcelain-T'
 mat 'Solder'
  color = (0.42, 0.42, 0.42, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 1.5e+07
@@ -284,7 +284,7 @@ mat 'Solder'
 mat 'Solder-T'
  color = (0.42, 0.42, 0.42, 1.0)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 1.5e+07
@@ -292,7 +292,7 @@ mat 'Solder-T'
 mat 'SolderLC'
  color = (0.42, 0.42, 0.42, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 7e+06
@@ -300,7 +300,7 @@ mat 'SolderLC'
 mat 'SolderLC-T'
  color = (0.42, 0.42, 0.42, 1.0)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 7e+06
@@ -308,7 +308,7 @@ mat 'SolderLC-T'
 mat 'Teflon'
  color = (0.99, 0.8, 0.78, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 2.8
  mur = 1
  sige = 0
@@ -316,7 +316,7 @@ mat 'Teflon'
 mat 'Teflon-T'
  color = (0.99, 0.8, 0.78, 1.0)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 2.8
  mur = 1
  sige = 0
@@ -324,12 +324,12 @@ mat 'Teflon-T'
 mat 'Yellow-T'
  color = (0.7991, 0.69387, 0.04231, 1.0)
  alpha = 0.5
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 0
 
-mesh '0Fields.psm'
+fields '0Fields.psm'
  verts = [
   (-6.0, -6.0, -6.0),
   (-6.0, -6.0, 6.0),
@@ -349,13 +349,16 @@ mesh '0Fields.psm'
   (7, 3, 1, 5),
  ]
  loc = (6.0, 6.0, 6.0)
+ colls = [
+  'Main.psm',
+ ]
+ display_type = 'WIRE'
  mat = 'Air'
- block_type = 'FIELDS'
  ms_rate = 20
  stop_ps = 400.0
  us_poll = 100
 
-mesh '5plate0.psm'
+matcube '5plate0.psm'
  verts = [
   (-4.0, -4.0, -1.0),
   (-4.0, -4.0, 1.0),
@@ -375,10 +378,12 @@ mesh '5plate0.psm'
   (7, 3, 1, 5),
  ]
  loc = (6.0, 6.0, 9.0)
+ colls = [
+  'Main.psm',
+ ]
  mat = 'Copper-T'
- block_type = 'MATCUBE'
 
-mesh '5plate1.psm'
+matcube '5plate1.psm'
  verts = [
   (-4.0, -4.0, -1.0),
   (-4.0, -4.0, 1.0),
@@ -398,10 +403,12 @@ mesh '5plate1.psm'
   (7, 3, 1, 5),
  ]
  loc = (6.0, 6.0, 3.0)
+ colls = [
+  'Main.psm',
+ ]
  mat = 'Copper-T'
- block_type = 'MATCUBE'
 
-mesh '7src.psm'
+source '7src.psm'
  verts = [
   (-1.5, -1.5, -2.0),
   (-1.5, -1.5, 2.0),
@@ -421,15 +428,17 @@ mesh '7src.psm'
   (7, 3, 1, 5),
  ]
  loc = (4.5, 6.5, 6.0)
+ colls = [
+  'Main.psm',
+ ]
  mat = 'Yellow-T'
- block_type = 'SOURCE'
  s_axis = ' Z'
  s_duration = 1.0
  s_excitation = 'Voltage'
  s_function = 'Gaussian Pulse'
  s_trise = 100.0
 
-mesh '8Ez4y.psm'
+probe '8Ez4y.psm'
  verts = [
   (-5.5, -6.0, 0.0),
   (5.5, -6.0, 0.0),
@@ -440,26 +449,31 @@ mesh '8Ez4y.psm'
   (0, 1, 3, 2),
  ]
  loc = (5.5, 6.0, 4.0)
+ colls = [
+  'Main.psm',
+ ]
+ hide_viewport = True
  mat = '8Ez4y.psm'
- block_type = 'PROBE'
  p_axis = 'Y'
  p_disp_scale = 0.01
 
-mesh '8Hyz6y.psm'
+probe '8Hyz6y.psm'
  verts = [
   (-5.5, 0.0, 0.0),
   (5.5, 0.0, 0.0),
  ]
- faces = [
-
+ edges = [
+  (0, 1),
  ]
  loc = (5.5, 6.0, 6.0)
- block_type = 'PROBE'
+ colls = [
+  'Main.psm',
+ ]
  p_axis = 'X'
  p_field = 'Magnetic'
  p_shape = 'Line'
 
-mesh '8Hz6x.psm'
+probe '8Hz6x.psm'
  verts = [
   (-5.5, -6.0, 0.0),
   (5.5, -6.0, 0.0),
@@ -470,12 +484,15 @@ mesh '8Hz6x.psm'
   (0, 1, 3, 2),
  ]
  loc = (5.5, 6.0, 6.0)
+ colls = [
+  'Main.psm',
+ ]
+ hide_viewport = True
  mat = '8Hz4x.psm'
- block_type = 'PROBE'
  p_axis = 'X'
  p_field = 'Magnetic'
 
-mesh '9ArrowsE.psm'
+probe '9ArrowsE.psm'
  verts = [
   (-4.0, -3.0, -3.0),
   (-4.0, -3.0, 3.0),
@@ -495,7 +512,11 @@ mesh '9ArrowsE.psm'
   (7, 3, 1, 5),
  ]
  loc = (5.0, 6.0, 6.0)
- block_type = 'PROBE'
+ colls = [
+  'Main.psm',
+ ]
+ hide_viewport = True
+ display_type = 'WIRE'
  p_shape = 'Volume'
  s_axis = ' X'
  s_duration = 1.0
@@ -504,7 +525,7 @@ mesh '9ArrowsE.psm'
  s_scale = 0.583
  s_trise = 100.0
 
-mesh '9ArrowsH.psm'
+probe '9ArrowsH.psm'
  verts = [
   (-4.0, -3.0, -3.0),
   (-4.0, -3.0, 3.0),
@@ -524,7 +545,11 @@ mesh '9ArrowsH.psm'
   (7, 3, 1, 5),
  ]
  loc = (5.0, 6.0, 6.0)
- block_type = 'PROBE'
+ colls = [
+  'Main.psm',
+ ]
+ hide_viewport = True
+ display_type = 'WIRE'
  p_field = 'Magnetic'
  p_shape = 'Volume'
  s_axis = ' X'
@@ -534,36 +559,72 @@ mesh '9ArrowsH.psm'
  s_scale = 0.583
  s_trise = 100.0
 
-mesh '9Ez.psm'
+probe '9Ez.psm'
  verts = [
   (0.0, 0.0, 12.0),
   (0.0, 0.0, 0.0),
  ]
- faces = [
-
+ edges = [
+  (0, 1),
  ]
  loc = (4.5, 6.0, 0.0)
- block_type = 'PROBE'
+ colls = [
+  'Main.psm',
+ ]
  p_axis = 'Magnitude'
  p_shape = 'Line'
 
- block_type = 'PROBE'
+ colls = [
+  'Main.psm',
+ ]
  p_shape = 'Point'
  p_value3 = (-0.24095, 0.19522, -249.48773)
 
-mesh '9Vsrc.psm'
+probe '9Vsrc.psm'
  verts = [
   (-0.0, 0.0, 6.0),
   (0.0, 0.0, 0.0),
  ]
- faces = [
-
+ edges = [
+  (0, 1),
  ]
  loc = (4.5, 6.0, 3.0)
- block_type = 'PROBE'
+ colls = [
+  'Main.psm',
+ ]
  p_axis = 'Z'
  p_field = 'Voltage'
  p_shape = 'Point'
  p_sum = True
  p_value = 0.99981
+
+coll 'E.psm'
+
+coll 'H.psm'
+
+coll 'Main.psm'
+ objects = [
+  '9ArrowsH.psm',
+  '5plate1.psm',
+  '9ArrowsE.psm',
+  '0Fields.psm',
+  '9Point.psm',
+  '7src.psm',
+  '5plate0.psm',
+  '8Ez4y.psm',
+  '8Hz6x.psm',
+  '8Hyz6y.psm',
+  '9Ez.psm',
+  '9Vsrc.psm',
+ ]
+
+coll 'Snap.psm'
+
+scene 'platesm'
+ colls = [
+  'Main.psm',
+  'H.psm',
+  'E.psm',
+  'Snap.psm',
+ ]
 

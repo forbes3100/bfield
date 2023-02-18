@@ -4,7 +4,7 @@ version 1
 mat 'Air'
  color = (0.5, 0.5, 1.0, 0.1)
  alpha = 0.1
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 0
@@ -12,7 +12,7 @@ mat 'Air'
 mat 'Copper'
  color = (0.45, 0.14, 0.06, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 9.8e+07
@@ -20,7 +20,7 @@ mat 'Copper'
 mat 'Copper-T'
  color = (0.45, 0.15, 0.06, 0.3)
  alpha = 0.3
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 9.8e+07
@@ -28,7 +28,7 @@ mat 'Copper-T'
 mat 'CopperTinned'
  color = (0.66, 0.55367, 0.45209, 1.0)
  alpha = 1.0
- fake = 0
+ fake = False
  epr = 1
  mur = 1
  sige = 9.8e+07
@@ -36,7 +36,7 @@ mat 'CopperTinned'
 mat 'Ferrite'
  color = (0.0946, 0.07895, 0.08358, 1.0)
  alpha = 1.0
- fake = 0
+ fake = False
  epr = 1
  mur = 1
  sige = 0
@@ -44,7 +44,7 @@ mat 'Ferrite'
 mat 'Ferrite_µr10'
  color = (0.0865, 0.0865, 0.0865, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 10
  sige = 0
@@ -52,7 +52,7 @@ mat 'Ferrite_µr10'
 mat 'FieldE'
  color = (0.0, 0.0, 1.0, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 0
@@ -60,7 +60,7 @@ mat 'FieldE'
 mat 'FieldH'
  color = (1.0, 0.0, 0.0, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 0
@@ -68,7 +68,7 @@ mat 'FieldH'
 mat 'FieldJ'
  color = (0.0, 1.0, 1.0, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 0
@@ -76,7 +76,7 @@ mat 'FieldJ'
 mat 'FieldM'
  color = (0.0, 1.0, 0.0, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 0
@@ -84,7 +84,7 @@ mat 'FieldM'
 mat 'FR4.T'
  color = (0.38436, 0.3489, 0.14982, 1.0)
  alpha = 1.0
- fake = 0
+ fake = False
  epr = 4.4
  mur = 1
  sige = 0
@@ -92,7 +92,7 @@ mat 'FR4.T'
 mat 'M0203-96ohms'
  color = (0.025, 0.025, 0.025, 1.0)
  alpha = 1.0
- fake = 0
+ fake = False
  epr = 1
  mur = 1
  sige = 69.445
@@ -100,7 +100,7 @@ mat 'M0203-96ohms'
 mat 'M0303-153ohms'
  color = (0.025, 0.025, 0.025, 1.0)
  alpha = 1.0
- fake = 0
+ fake = False
  epr = 1
  mur = 1
  sige = 65.36
@@ -108,7 +108,7 @@ mat 'M0303-153ohms'
 mat 'M0303-65ohms'
  color = (0.025, 0.025, 0.025, 1.0)
  alpha = 1.0
- fake = 0
+ fake = False
  epr = 1
  mur = 1
  sige = 51.282
@@ -116,7 +116,7 @@ mat 'M0303-65ohms'
 mat 'R0402-1K'
  color = (0.025, 0.025, 0.025, 1.0)
  alpha = 1.0
- fake = 0
+ fake = False
  epr = 1
  mur = 1
  sige = 2.7778
@@ -124,7 +124,7 @@ mat 'R0402-1K'
 mat 'Short-T3'
  color = (0.41997, 0.20822, 0.10626, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 9.8e+07
@@ -132,7 +132,7 @@ mat 'Short-T3'
 mat 'Solder'
  color = (0.5972, 0.57758, 0.61721, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 6e+06
@@ -140,7 +140,7 @@ mat 'Solder'
 mat 'Solder.T1'
  color = (0.64217, 0.62282, 0.66186, 1.0)
  alpha = 1.0
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 6e+06
@@ -148,7 +148,7 @@ mat 'Solder.T1'
 mat 'Teflon-T'
  color = (0.60383, 0.58408, 0.52712, 1.0)
  alpha = 0.5
- fake = 1
+ fake = True
  epr = 2.8
  mur = 1
  sige = 0
@@ -156,12 +156,12 @@ mat 'Teflon-T'
 mat 'Yellow-T'
  color = (0.7991, 0.69387, 0.04231, 1.0)
  alpha = 0.5
- fake = 1
+ fake = True
  epr = 1
  mur = 1
  sige = 0
 
-mesh '0Fields_L1.T3'
+fields '0Fields_L1.T3'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 1.9),
@@ -181,14 +181,17 @@ mesh '0Fields_L1.T3'
   (6, 7, 5, 4),
  ]
  loc = (-1.3, -0.7, 0.2)
+ colls = [
+  'Main.T3',
+ ]
+ display_type = 'WIRE'
  mat = 'Air'
- block_type = 'FIELDS'
  dx = 0.05
  ms_rate = 20
  stop_ps = 250.0
  us_poll = 10
 
-mesh '0Fields_Tight.T3'
+fields '0Fields_Tight.T3'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 1.1),
@@ -208,13 +211,17 @@ mesh '0Fields_Tight.T3'
   (6, 7, 5, 4),
  ]
  loc = (-1.3, -0.5, 0.2)
+ colls = [
+  'Main.T3',
+ ]
+ hide_viewport = True
+ display_type = 'WIRE'
  mat = 'Air'
- block_type = 'FIELDS'
  dx = 0.1
  ms_rate = 20
  us_poll = 10
 
-mesh '1FerriteBead.T3'
+matcube '1FerriteBead.T3'
  verts = [
   (2.0, 2.0, -0.0),
   (2.0, 0.0, -0.0),
@@ -234,10 +241,13 @@ mesh '1FerriteBead.T3'
   (7, 3, 1, 5),
  ]
  loc = (3.2, -1.0, -0.2)
+ colls = [
+  'Main.T3',
+ ]
+ hide_viewport = True
  mat = 'Ferrite'
- block_type = 'MATCUBE'
 
-mesh '1PCB.T3'
+matcube '1PCB.T3'
  verts = [
   (10.0, 3.0, -0.0),
   (10.0, 0.0, -0.0),
@@ -257,10 +267,13 @@ mesh '1PCB.T3'
   (7, 3, 1, 5),
  ]
  loc = (-2.0, -1.5, -0.8)
+ colls = [
+  'Main.T3',
+ ]
+ display_type = 'WIRE'
  mat = 'FR4.T'
- block_type = 'MATCUBE'
 
-mesh '2Shield.T3'
+matcube '2Shield.T3'
  verts = [
   (-0.0, 0.0, -0.0),
   (-0.0, 0.0, 1.9),
@@ -280,10 +293,12 @@ mesh '2Shield.T3'
   (7, 3, 1, 5),
  ]
  loc = (3.8, -1.7, 0.5)
+ colls = [
+  'Component_Wall.T3',
+ ]
  mat = 'Copper-T'
- block_type = 'MATCUBE'
 
-mesh '3L1-Leads'
+matmesh '3L1-Leads'
  verts = [
   (0.5, -0.0, 0.1),
   (0.3, -0.0, -0.0),
@@ -361,10 +376,13 @@ mesh '3L1-Leads'
   (33, 35, 19),
  ]
  loc = (2.7, -0.3, 0.8)
+ parent '4L1.T3'
+ colls = [
+  'Component_L1Ferrite.T3',
+ ]
  mat = 'Solder'
- block_type = 'MATMESH'
 
-mesh '3R1-Leads'
+matmesh '3R1-Leads'
  verts = [
   (0.5, -0.0, 0.1),
   (0.3, -0.0, -0.0),
@@ -442,10 +460,13 @@ mesh '3R1-Leads'
   (33, 35, 19),
  ]
  loc = (3.0, -0.2, 0.8)
+ parent '4R1.T3'
+ colls = [
+  'Component_R1.T3',
+ ]
  mat = 'Solder'
- block_type = 'MATMESH'
 
-mesh '3ShieldHole.T3'
+matcube '3ShieldHole.T3'
  verts = [
   (-0.0, 0.0, -0.0),
   (-0.0, 0.0, 0.5),
@@ -465,10 +486,13 @@ mesh '3ShieldHole.T3'
   (7, 3, 1, 5),
  ]
  loc = (3.7, -0.3, 0.5)
+ colls = [
+  'Component_Wall.T3',
+ ]
+ display_type = 'WIRE'
  mat = 'Air'
- block_type = 'MATCUBE'
 
-mesh '4L1.T3'
+matcube '4L1.T3'
  verts = [
   (0.0, 0.1, 0.7),
   (0.0, 0.1, 0.1),
@@ -488,10 +512,12 @@ mesh '4L1.T3'
   (3, 7, 6, 2),
  ]
  loc = (3.2, -0.3, 0.8)
+ colls = [
+  'Component_L1Ferrite.T3',
+ ]
  mat = 'Ferrite_µr10'
- block_type = 'MATCUBE'
 
-mesh '4L1_coil_cross'
+matmesh '4L1_coil_cross'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 0.1),
@@ -502,11 +528,14 @@ mesh '4L1_coil_cross'
   (0, 1, 3, 2),
  ]
  loc = (3.0, 0.0, 0.7)
+ colls = [
+  'Component_L1Coil.T3',
+ ]
+ hide_viewport = True
  mat = 'Copper'
- block_type = 'MATMESH'
  verbose = 1
 
-mesh '4L1_coil_cyl.T3'
+matmesh '4L1_coil_cyl.T3'
  verts = [
   (-0.79426, -0.05325, -0.35124),
   (-0.83331, -0.04937, -0.35921),
@@ -2134,10 +2163,13 @@ mesh '4L1_coil_cyl.T3'
   (768, 779, 778, 777, 776, 775, 774, 773, 772, 771, 770, 769),
  ]
  loc = (3.6938, 0.09595, 1.27412)
+ colls = [
+  'Component_L1Coil.T3',
+ ]
+ hide_viewport = True
  mat = 'CopperTinned'
- block_type = 'MATMESH'
 
-mesh '4L1_coil_cyl_4loop.T3'
+matmesh '4L1_coil_cyl_4loop.T3'
  verts = [
   (-0.75441, -0.05166, -0.3615),
   (-0.78986, -0.04814, -0.37036),
@@ -5229,10 +5261,12 @@ mesh '4L1_coil_cyl_4loop.T3'
   (1536, 1547, 1546, 1545, 1544, 1543, 1542, 1541, 1540, 1539, 1538, 1537),
  ]
  loc = (3.73044, 0.0996, 1.29666)
+ colls = [
+  'Component_L1Coil.T3',
+ ]
  mat = 'CopperTinned'
- block_type = 'MATMESH'
 
-mesh '4L1_coil_thick.T3'
+matcube '4L1_coil_thick.T3'
  verts = [
   (-0.0, 0.0, 0.0),
   (-0.0, 0.0, 0.1),
@@ -5590,10 +5624,13 @@ mesh '4L1_coil_thick.T3'
   (185, 176, 182, 183),
  ]
  loc = (3.0, 0.0, 0.7)
+ colls = [
+  'Component_L1Coil.T3',
+ ]
+ hide_viewport = True
  mat = 'Copper'
- block_type = 'MATCUBE'
 
-mesh '4L1_coil_thin.T3'
+matmesh '4L1_coil_thin.T3'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 0.1),
@@ -5788,11 +5825,14 @@ mesh '4L1_coil_thin.T3'
   (84, 91, 95, 92),
  ]
  loc = (3.0, 0.0, 0.7)
+ colls = [
+  'Component_L1Coil.T3',
+ ]
+ hide_viewport = True
  mat = 'Copper'
- block_type = 'MATMESH'
  verbose = 1
 
-mesh '4L1_wire.T3'
+matcube '4L1_wire.T3'
  verts = [
   (-0.0, -0.1, 0.0),
   (-0.0, -0.1, 0.1),
@@ -5833,10 +5873,13 @@ mesh '4L1_wire.T3'
   (16, 17, 19, 18),
  ]
  loc = (3.0, 0.0, 0.7)
+ colls = [
+  'Component_L1Coil.T3',
+ ]
+ hide_viewport = True
  mat = 'Copper'
- block_type = 'MATCUBE'
 
-mesh '4R1.T3'
+resistor '4R1.T3'
  verts = [
   (0.5, 0.0, -0.0),
   (0.0, 0.0, -0.0),
@@ -5856,11 +5899,13 @@ mesh '4R1.T3'
   (7, 6, 5, 4),
  ]
  loc = (3.5, -0.2, 0.8)
+ colls = [
+  'Component_R1.T3',
+ ]
  mat = 'R0402-1K'
  axis = ' X'
- block_type = 'RESISTOR'
 
-mesh '4R2.T3'
+resistor '4R2.T3'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 0.2),
@@ -5880,9 +5925,11 @@ mesh '4R2.T3'
   (7, 3, 1, 5),
  ]
  loc = (6.1, -0.1, 0.5)
+ colls = [
+  'Main.T3',
+ ]
  mat = 'M0303-65ohms'
  axis = ' Z'
- block_type = 'RESISTOR'
  resistance = 65.0
  s_axis = '-Z'
  s_duration = 1.0
@@ -5892,7 +5939,7 @@ mesh '4R2.T3'
  s_resistance = 380.0
  s_trise = 50.0
 
-mesh '4R3.T3'
+resistor '4R3.T3'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 0.2),
@@ -5912,9 +5959,11 @@ mesh '4R3.T3'
   (7, 3, 1, 5),
  ]
  loc = (3.6, -0.1, 0.5)
+ colls = [
+  'Component_Atten.T3',
+ ]
  mat = 'M0203-96ohms'
  axis = ' Z'
- block_type = 'RESISTOR'
  resistance = 96.0
  s_axis = '-Z'
  s_duration = 1.0
@@ -5924,7 +5973,7 @@ mesh '4R3.T3'
  s_resistance = 380.0
  s_trise = 50.0
 
-mesh '4R4.T3'
+resistor '4R4.T3'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 0.1),
@@ -5944,9 +5993,11 @@ mesh '4R4.T3'
   (7, 3, 1, 5),
  ]
  loc = (3.7, -0.1, 0.7)
+ colls = [
+  'Component_Atten.T3',
+ ]
  mat = 'M0303-153ohms'
  axis = ' X'
- block_type = 'RESISTOR'
  resistance = 153.0
  s_axis = '-Z'
  s_duration = 1.0
@@ -5956,7 +6007,7 @@ mesh '4R4.T3'
  s_resistance = 380.0
  s_trise = 50.0
 
-mesh '4R5.T3'
+resistor '4R5.T3'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 0.2),
@@ -5976,9 +6027,11 @@ mesh '4R5.T3'
   (7, 3, 1, 5),
  ]
  loc = (4.0, -0.1, 0.5)
+ colls = [
+  'Component_Atten.T3',
+ ]
  mat = 'M0203-96ohms'
  axis = ' Z'
- block_type = 'RESISTOR'
  resistance = 96.0
  s_axis = '-Z'
  s_duration = 1.0
@@ -5988,7 +6041,7 @@ mesh '4R5.T3'
  s_resistance = 380.0
  s_trise = 50.0
 
-mesh '5GPlane.T3'
+matcube '5GPlane.T3'
  verts = [
   (10.5, 3.3, 0.0),
   (10.5, 0.0, 0.0),
@@ -6008,10 +6061,12 @@ mesh '5GPlane.T3'
   (7, 3, 1, 5),
  ]
  loc = (-2.6, -1.7, 0.2)
+ colls = [
+  'Main.T3',
+ ]
  mat = 'Copper-T'
- block_type = 'MATCUBE'
 
-mesh '5PadR1in.T3'
+matcube '5PadR1in.T3'
  verts = [
   (0.5, 0.6, 0.0),
   (0.5, 1e-05, 0.0),
@@ -6031,10 +6086,12 @@ mesh '5PadR1in.T3'
   (7, 3, 1, 5),
  ]
  loc = (3.0, -0.2, 0.7)
+ colls = [
+  'Component_R1.T3',
+ ]
  mat = 'Copper'
- block_type = 'MATCUBE'
 
-mesh '5PadR1out.T3'
+matcube '5PadR1out.T3'
  verts = [
   (0.5, 0.6, 0.0),
   (0.5, 1e-05, 0.0),
@@ -6054,10 +6111,12 @@ mesh '5PadR1out.T3'
   (7, 3, 1, 5),
  ]
  loc = (4.0, -0.2, 0.7)
+ colls = [
+  'Component_R1.T3',
+ ]
  mat = 'Copper'
- block_type = 'MATCUBE'
 
-mesh '5Solder1.T3'
+matmesh '5Solder1.T3'
  verts = [
   (-0.09032, -0.15596, 0.04081),
   (-0.09032, 0.14343, 0.15888),
@@ -6085,10 +6144,13 @@ mesh '5Solder1.T3'
   (5, 4, 8, 10),
  ]
  loc = (2.97689, 0.04733, 0.85033)
+ parent '4L1_coil_cyl_4loop.T3'
+ colls = [
+  'Component_L1Coil.T3',
+ ]
  mat = 'Solder'
- block_type = 'MATMESH'
 
-mesh '5Solder2.T3'
+matmesh '5Solder2.T3'
  verts = [
   (0.09032, 0.15596, 0.04081),
   (0.09032, -0.14343, 0.15888),
@@ -6116,10 +6178,13 @@ mesh '5Solder2.T3'
   (5, 4, 8, 10),
  ]
  loc = (4.49689, 0.04733, 0.85033)
+ parent '4L1_coil_cyl_4loop.T3'
+ colls = [
+  'Component_L1Coil.T3',
+ ]
  mat = 'Solder'
- block_type = 'MATMESH'
 
-mesh '5TraceIn.T3'
+matcube '5TraceIn.T3'
  verts = [
   (3.9, 0.3, 0.0),
   (3.9, 0.0, 0.0),
@@ -6139,10 +6204,12 @@ mesh '5TraceIn.T3'
   (7, 3, 1, 5),
  ]
  loc = (-0.9, -0.1, 0.7)
+ colls = [
+  'Main.T3',
+ ]
  mat = 'Copper'
- block_type = 'MATCUBE'
 
-mesh '5TraceOut.T3'
+matcube '5TraceOut.T3'
  verts = [
   (1.8, 0.3, 0.0),
   (1.8, 0.0, 0.0),
@@ -6162,10 +6229,12 @@ mesh '5TraceOut.T3'
   (7, 3, 1, 5),
  ]
  loc = (4.5, -0.1, 0.7)
+ colls = [
+  'Main.T3',
+ ]
  mat = 'Copper'
- block_type = 'MATCUBE'
 
-mesh '5TraceShort.R1.T3'
+matcube '5TraceShort.R1.T3'
  verts = [
   (1.5, 0.3, 0.0),
   (1.5, 0.0, 0.0),
@@ -6185,10 +6254,12 @@ mesh '5TraceShort.R1.T3'
   (7, 3, 1, 5),
  ]
  loc = (3.0, -0.1, 0.7)
+ colls = [
+  'Component_None.T3',
+ ]
  mat = 'Copper'
- block_type = 'MATCUBE'
 
-mesh '5TraceShort.R1in.T3'
+matcube '5TraceShort.R1in.T3'
  verts = [
   (0.7, 0.3, 0.0),
   (0.7, 0.0, 0.0),
@@ -6208,10 +6279,12 @@ mesh '5TraceShort.R1in.T3'
   (7, 3, 1, 5),
  ]
  loc = (3.0, -0.1, 0.7)
+ colls = [
+  'Component_Atten.T3',
+ ]
  mat = 'Copper'
- block_type = 'MATCUBE'
 
-mesh '5TraceShort.R1out.T3'
+matcube '5TraceShort.R1out.T3'
  verts = [
   (0.5, 0.3, 0.0),
   (0.5, 0.0, 0.0),
@@ -6231,10 +6304,12 @@ mesh '5TraceShort.R1out.T3'
   (7, 3, 1, 5),
  ]
  loc = (4.0, -0.1, 0.7)
+ colls = [
+  'Component_Atten.T3',
+ ]
  mat = 'Copper'
- block_type = 'MATCUBE'
 
-mesh '8ArrowsE.Hole.T3'
+probe '8ArrowsE.Hole.T3'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 1.2),
@@ -6254,15 +6329,19 @@ mesh '8ArrowsE.Hole.T3'
   (6, 7, 5, 4),
  ]
  loc = (3.5, -0.6, 0.4)
+ colls = [
+  'Component_Wall.T3',
+ ]
+ hide_viewport = True
+ display_type = 'WIRE'
  mat = 'Air'
- block_type = 'PROBE'
  dx = 0.1
  ms_rate = 20
  p_sfactor = 2
  p_shape = 'Volume'
  us_poll = 10
 
-mesh '8ArrowsE.L1B-sm2.T3'
+probe '8ArrowsE.L1B-sm2.T3'
  verts = [
   (0.1, 0.7, -0.2),
   (0.1, 0.7, 0.6),
@@ -6282,15 +6361,19 @@ mesh '8ArrowsE.L1B-sm2.T3'
   (6, 7, 5, 4),
  ]
  loc = (2.4, -0.9, 0.8)
+ colls = [
+  'Component_L1Coil.T3',
+ ]
+ hide_viewport = True
+ display_type = 'WIRE'
  mat = 'Air'
- block_type = 'PROBE'
  dx = 0.1
  ms_rate = 20
  p_sfactor = 2
  p_shape = 'Volume'
  us_poll = 10
 
-mesh '8ArrowsE.L1B.T3'
+probe '8ArrowsE.L1B.T3'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 1.2),
@@ -6310,15 +6393,19 @@ mesh '8ArrowsE.L1B.T3'
   (6, 7, 5, 4),
  ]
  loc = (2.8, -0.6, 0.6)
+ colls = [
+  'Component_L1Coil.T3',
+ ]
+ hide_viewport = True
+ display_type = 'WIRE'
  mat = 'Air'
- block_type = 'PROBE'
  dx = 0.1
  ms_rate = 20
  p_sfactor = 2
  p_shape = 'Volume'
  us_poll = 10
 
-mesh '8ArrowsE.Src.T3'
+probe '8ArrowsE.Src.T3'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 0.6),
@@ -6338,10 +6425,14 @@ mesh '8ArrowsE.Src.T3'
   (7, 3, 1, 5),
  ]
  loc = (-1.0, -0.4, 0.3)
- block_type = 'PROBE'
+ colls = [
+  'Main.T3',
+ ]
+ hide_viewport = True
+ display_type = 'WIRE'
  p_shape = 'Volume'
 
-mesh '8ArrowsEtr.T3'
+probe '8ArrowsEtr.T3'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 1.2),
@@ -6361,15 +6452,18 @@ mesh '8ArrowsEtr.T3'
   (6, 7, 5, 4),
  ]
  loc = (2.8, -0.6, 0.6)
+ colls = [
+  'Component_None.T3',
+ ]
+ display_type = 'WIRE'
  mat = 'Air'
- block_type = 'PROBE'
  dx = 0.1
  ms_rate = 20
  p_sfactor = 4
  p_shape = 'Volume'
  us_poll = 10
 
-mesh '8ArrowsH.Hole.T3'
+probe '8ArrowsH.Hole.T3'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 1.2),
@@ -6389,8 +6483,12 @@ mesh '8ArrowsH.Hole.T3'
   (6, 7, 5, 4),
  ]
  loc = (3.5, -0.6, 0.4)
+ colls = [
+  'Component_Wall.T3',
+ ]
+ hide_viewport = True
+ display_type = 'WIRE'
  mat = 'Air'
- block_type = 'PROBE'
  dx = 0.1
  ms_rate = 20
  p_field = 'Magnetic'
@@ -6398,7 +6496,7 @@ mesh '8ArrowsH.Hole.T3'
  p_shape = 'Volume'
  us_poll = 10
 
-mesh '8ArrowsH.L1B-sm.T3'
+probe '8ArrowsH.L1B-sm.T3'
  verts = [
   (0.55, 1.0, 0.0),
   (0.55, 1.0, 0.6),
@@ -6418,8 +6516,12 @@ mesh '8ArrowsH.L1B-sm.T3'
   (6, 7, 5, 4),
  ]
  loc = (2.8, -0.6, 0.6)
+ colls = [
+  'Component_L1Coil.T3',
+ ]
+ hide_viewport = True
+ display_type = 'WIRE'
  mat = 'Air'
- block_type = 'PROBE'
  dx = 0.1
  ms_rate = 20
  p_field = 'Magnetic'
@@ -6427,7 +6529,7 @@ mesh '8ArrowsH.L1B-sm.T3'
  p_shape = 'Volume'
  us_poll = 10
 
-mesh '8ArrowsH.L1B-sm2.T3'
+probe '8ArrowsH.L1B-sm2.T3'
  verts = [
   (0.1, 0.7, -0.2),
   (0.1, 0.7, 0.6),
@@ -6447,8 +6549,11 @@ mesh '8ArrowsH.L1B-sm2.T3'
   (6, 7, 5, 4),
  ]
  loc = (2.4, -0.9, 0.8)
+ colls = [
+  'Component_L1Coil.T3',
+ ]
+ display_type = 'WIRE'
  mat = 'Air'
- block_type = 'PROBE'
  dx = 0.1
  ms_rate = 20
  p_field = 'Magnetic'
@@ -6456,7 +6561,7 @@ mesh '8ArrowsH.L1B-sm2.T3'
  p_shape = 'Volume'
  us_poll = 10
 
-mesh '8ArrowsH.L1B.T3'
+probe '8ArrowsH.L1B.T3'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 1.2),
@@ -6476,8 +6581,12 @@ mesh '8ArrowsH.L1B.T3'
   (6, 7, 5, 4),
  ]
  loc = (2.8, -0.6, 0.6)
+ colls = [
+  'Component_L1Coil.T3',
+ ]
+ hide_viewport = True
+ display_type = 'WIRE'
  mat = 'Air'
- block_type = 'PROBE'
  dx = 0.1
  ms_rate = 20
  p_field = 'Magnetic'
@@ -6485,7 +6594,7 @@ mesh '8ArrowsH.L1B.T3'
  p_shape = 'Volume'
  us_poll = 10
 
-mesh '8ArrowsHtr.T3'
+probe '8ArrowsHtr.T3'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 1.2),
@@ -6505,8 +6614,11 @@ mesh '8ArrowsHtr.T3'
   (6, 7, 5, 4),
  ]
  loc = (2.8, -0.6, 0.6)
+ colls = [
+  'Component_None.T3',
+ ]
+ display_type = 'WIRE'
  mat = 'Air'
- block_type = 'PROBE'
  dx = 0.1
  ms_rate = 20
  p_field = 'Magnetic'
@@ -6514,122 +6626,143 @@ mesh '8ArrowsHtr.T3'
  p_shape = 'Volume'
  us_poll = 10
 
- block_type = 'PROBE'
+ colls = [
+  'Main.T3',
+ ]
  p_axis = 'Z'
  p_shape = 'Point'
 
-mesh '8V_X2p0.T3'
+probe '8V_X2p0.T3'
  verts = [
   (0.0, 0.0, -0.2),
   (0.0, 0.0, 0.0),
  ]
- faces = [
-
+ edges = [
+  (1, 0),
  ]
  loc = (2.0, 0.0, 0.7)
- block_type = 'PROBE'
+ colls = [
+  'Main.T3',
+ ]
  p_axis = 'Z'
  p_field = 'Voltage'
  p_shape = 'Point'
  p_sum = True
  p_value = 0.01568
 
-mesh '8V_X3p7.T3'
+probe '8V_X3p7.T3'
  verts = [
   (0.0, 0.0, -0.2),
   (0.0, 0.0, 0.0),
  ]
- faces = [
-
+ edges = [
+  (1, 0),
  ]
  loc = (3.7, 0.0, 0.7)
- block_type = 'PROBE'
+ colls = [
+  'Component_Atten.T3',
+  'Component_L1Ferrite.T3',
+  'Component_None.T3',
+ ]
  p_axis = 'Z'
  p_field = 'Voltage'
  p_shape = 'Point'
  p_sum = True
  p_value = 0.00647
 
-mesh '8V_X3p7_tall.T3'
+probe '8V_X3p7_tall.T3'
  verts = [
   (0.0, 0.0, -0.2),
   (0.0, 0.0, 0.1),
  ]
- faces = [
-
+ edges = [
+  (1, 0),
  ]
  loc = (3.7, 0.0, 0.7)
- block_type = 'PROBE'
+ colls = [
+  'Component_L1Ferrite.T3',
+  'Component_R1.T3',
+ ]
  p_axis = 'Z'
  p_field = 'Voltage'
  p_shape = 'Point'
  p_sum = True
  p_value = 0.02054
 
-mesh '8V_X4p2.T3'
+probe '8V_X4p2.T3'
  verts = [
   (0.0, 0.0, -0.2),
   (0.0, 0.0, 0.0),
  ]
- faces = [
-
+ edges = [
+  (1, 0),
  ]
  loc = (4.2, 0.0, 0.7)
- block_type = 'PROBE'
+ colls = [
+  'Component_Atten.T3',
+  'Component_None.T3',
+  'Component_R1.T3',
+ ]
  p_axis = 'Z'
  p_field = 'Voltage'
  p_shape = 'Point'
  p_sum = True
  p_value = 0.20242
 
-mesh '8V_X4p2_tall.T3'
+probe '8V_X4p2_tall.T3'
  verts = [
   (0.0, 0.0, -0.2),
   (0.0, 0.0, 0.1),
  ]
- faces = [
-
+ edges = [
+  (1, 0),
  ]
  loc = (4.2, -0.2, 0.7)
- block_type = 'PROBE'
+ colls = [
+  'Component_L1Ferrite.T3',
+ ]
  p_axis = 'Z'
  p_field = 'Voltage'
  p_shape = 'Point'
  p_sum = True
  p_value = 0.00364
 
-mesh '8V_X6p0.T3'
+probe '8V_X6p0.T3'
  verts = [
   (0.0, 0.0, -0.2),
   (0.0, 0.0, 0.0),
  ]
- faces = [
-
+ edges = [
+  (1, 0),
  ]
  loc = (6.0, 0.0, 0.7)
- block_type = 'PROBE'
+ colls = [
+  'Main.T3',
+ ]
  p_axis = 'Z'
  p_field = 'Voltage'
  p_shape = 'Point'
  p_sum = True
 
-mesh '8V_Xm0p5.T3'
+probe '8V_Xm0p5.T3'
  verts = [
   (0.0, 0.0, -0.2),
   (0.0, 0.0, 0.0),
  ]
- faces = [
-
+ edges = [
+  (1, 0),
  ]
  loc = (-0.5, 0.0, 0.7)
- block_type = 'PROBE'
+ colls = [
+  'Main.T3',
+ ]
  p_axis = 'Z'
  p_field = 'Voltage'
  p_shape = 'Point'
  p_sum = True
  p_value = 0.34798
 
-mesh '9Src.T3'
+source '9Src.T3'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 0.2),
@@ -6649,8 +6782,10 @@ mesh '9Src.T3'
   (7, 3, 1, 5),
  ]
  loc = (-0.9, -0.1, 0.5)
+ colls = [
+  'Main.T3',
+ ]
  mat = 'Yellow-T'
- block_type = 'SOURCE'
  s_axis = ' Z'
  s_duration = 1.0
  s_excitation = 'Voltage'
@@ -6659,7 +6794,7 @@ mesh '9Src.T3'
  s_resistance = 380.0
  s_trise = 50.0
 
-mesh 'L0603-Wire-2turns'
+matmesh 'L0603-Wire-2turns'
  verts = [
   (0.0, 0.0, 0.0),
   (0.0, 0.0, 0.1),
@@ -6854,6 +6989,126 @@ mesh 'L0603-Wire-2turns'
   (84, 91, 95, 92),
  ]
  loc = (3.2, -0.3, 0.8)
+ parent '4L1.T3'
+ colls = [
+  'Component_L1Ferrite.T3',
+ ]
  mat = 'Copper'
- block_type = 'MATMESH'
+
+coll 'Component_Atten.T3'
+ objects = [
+  '4R3.T3',
+  '4R4.T3',
+  '4R5.T3',
+  '5TraceShort.R1out.T3',
+  '5TraceShort.R1in.T3',
+  '8V_X3p7.T3',
+  '8V_X4p2.T3',
+ ]
+ hide_viewport = True
+
+coll 'Component_L1Coil.T3'
+ objects = [
+  '8ArrowsH.L1B.T3',
+  '8ArrowsE.L1B.T3',
+  '4L1_wire.T3',
+  '4L1_coil_thick.T3',
+  '4L1_coil_thin.T3',
+  '8ArrowsH.L1B-sm.T3',
+  '4L1_coil_cross',
+  '4L1_coil_cyl.T3',
+  '5Solder1.T3',
+  '5Solder2.T3',
+  '8ArrowsH.L1B-sm2.T3',
+  '4L1_coil_cyl.m',
+  '4L1_coil_cyl_4loop.m',
+  '4L1_coil_cyl_4loop.T3',
+  '8ArrowsE.L1B-sm2.T3',
+ ]
+
+coll 'Component_L1Ferrite.T3'
+ objects = [
+  '3L1-Leads',
+  '4L1.T3',
+  'L0603-Wire-2turns',
+  '8V_X3p7.T3',
+  '8V_X3p7_tall.T3',
+  '8V_X4p2_tall.T3',
+ ]
+ hide_viewport = True
+
+coll 'Component_None.T3'
+ objects = [
+  '5TraceShort.R1.T3',
+  '8ArrowsHtr.T3',
+  '8ArrowsEtr.T3',
+  '8V_X3p7.T3',
+  '8V_X4p2.T3',
+ ]
+ hide_viewport = True
+
+coll 'Component_R1.T3'
+ objects = [
+  '5PadR1in.T3',
+  '5PadR1out.T3',
+  '4R1.T3',
+  '3R1-Leads',
+  '8V_X4p2.T3',
+  '8V_X3p7_tall.T3',
+ ]
+ hide_viewport = True
+
+coll 'Component_Wall.T3'
+ objects = [
+  '8ArrowsH.Hole.T3',
+  '8ArrowsE.Hole.T3',
+  '2Shield.T3',
+  '3ShieldHole.T3',
+ ]
+ hide_viewport = True
+
+coll 'E.T3'
+
+coll 'H.T3'
+
+coll 'Main.T3'
+ objects = [
+  '1FerriteBead.T3',
+  '0Fields_L1.T3',
+  '4R2.T3',
+  '8V_X6p0.T3',
+  '8V_X2p0.T3',
+  '8V_Xm0p5.T3',
+  '0Fields_Tight.T3',
+  '9Src.T3',
+  '1PCB.T3',
+  '5TraceOut.T3',
+  '5TraceIn.T3',
+  '5GPlane.T3',
+  '8ArrowsE.Src.T3',
+  '8ProbeV',
+ ]
+
+coll 'Plane'
+
+coll 'Planes'
+
+coll 'Snap'
+
+coll 'Snap.001'
+
+scene 'Trace3'
+ colls = [
+  'Main.T3',
+  'Component_None.T3',
+  'Component_R1.T3',
+  'Component_Atten.T3',
+  'Component_L1Ferrite.T3',
+  'Component_L1Coil.T3',
+  'Component_Wall.T3',
+  'H.T3',
+  'E.T3',
+  'Snap.001',
+  'Plane',
+ ]
 
