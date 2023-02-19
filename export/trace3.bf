@@ -6332,14 +6332,10 @@ probe '8ArrowsE.Hole.T3'
  colls = [
   'Component_Wall.T3',
  ]
- hide_viewport = True
  display_type = 'WIRE'
  mat = 'Air'
- dx = 0.1
- ms_rate = 20
  p_sfactor = 2
  p_shape = 'Volume'
- us_poll = 10
 
 probe '8ArrowsE.L1B-sm2.T3'
  verts = [
@@ -6367,11 +6363,8 @@ probe '8ArrowsE.L1B-sm2.T3'
  hide_viewport = True
  display_type = 'WIRE'
  mat = 'Air'
- dx = 0.1
- ms_rate = 20
  p_sfactor = 2
  p_shape = 'Volume'
- us_poll = 10
 
 probe '8ArrowsE.L1B.T3'
  verts = [
@@ -6399,11 +6392,8 @@ probe '8ArrowsE.L1B.T3'
  hide_viewport = True
  display_type = 'WIRE'
  mat = 'Air'
- dx = 0.1
- ms_rate = 20
  p_sfactor = 2
  p_shape = 'Volume'
- us_poll = 10
 
 probe '8ArrowsE.Src.T3'
  verts = [
@@ -6457,11 +6447,8 @@ probe '8ArrowsEtr.T3'
  ]
  display_type = 'WIRE'
  mat = 'Air'
- dx = 0.1
- ms_rate = 20
  p_sfactor = 4
  p_shape = 'Volume'
- us_poll = 10
 
 probe '8ArrowsH.Hole.T3'
  verts = [
@@ -6486,15 +6473,11 @@ probe '8ArrowsH.Hole.T3'
  colls = [
   'Component_Wall.T3',
  ]
- hide_viewport = True
  display_type = 'WIRE'
  mat = 'Air'
- dx = 0.1
- ms_rate = 20
  p_field = 'Magnetic'
  p_sfactor = 2
  p_shape = 'Volume'
- us_poll = 10
 
 probe '8ArrowsH.L1B-sm.T3'
  verts = [
@@ -6522,12 +6505,9 @@ probe '8ArrowsH.L1B-sm.T3'
  hide_viewport = True
  display_type = 'WIRE'
  mat = 'Air'
- dx = 0.1
- ms_rate = 20
  p_field = 'Magnetic'
  p_sfactor = 2
  p_shape = 'Volume'
- us_poll = 10
 
 probe '8ArrowsH.L1B-sm2.T3'
  verts = [
@@ -6554,12 +6534,9 @@ probe '8ArrowsH.L1B-sm2.T3'
  ]
  display_type = 'WIRE'
  mat = 'Air'
- dx = 0.1
- ms_rate = 20
  p_field = 'Magnetic'
  p_sfactor = 2
  p_shape = 'Volume'
- us_poll = 10
 
 probe '8ArrowsH.L1B.T3'
  verts = [
@@ -6587,12 +6564,9 @@ probe '8ArrowsH.L1B.T3'
  hide_viewport = True
  display_type = 'WIRE'
  mat = 'Air'
- dx = 0.1
- ms_rate = 20
  p_field = 'Magnetic'
  p_sfactor = 2
  p_shape = 'Volume'
- us_poll = 10
 
 probe '8ArrowsHtr.T3'
  verts = [
@@ -6619,12 +6593,9 @@ probe '8ArrowsHtr.T3'
  ]
  display_type = 'WIRE'
  mat = 'Air'
- dx = 0.1
- ms_rate = 20
  p_field = 'Magnetic'
  p_sfactor = 4
  p_shape = 'Volume'
- us_poll = 10
 
 probe '8ProbeV'
 loc = (2.6, 0.1, 0.83934)

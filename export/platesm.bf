@@ -518,12 +518,6 @@ probe '9ArrowsE.psm'
  hide_viewport = True
  display_type = 'WIRE'
  p_shape = 'Volume'
- s_axis = ' X'
- s_duration = 1.0
- s_excitation = 'Voltage'
- s_function = 'Gaussian Pulse'
- s_scale = 0.583
- s_trise = 100.0
 
 probe '9ArrowsH.psm'
  verts = [
@@ -552,12 +546,6 @@ probe '9ArrowsH.psm'
  display_type = 'WIRE'
  p_field = 'Magnetic'
  p_shape = 'Volume'
- s_axis = ' X'
- s_duration = 1.0
- s_excitation = 'Voltage'
- s_function = 'Gaussian Pulse'
- s_scale = 0.583
- s_trise = 100.0
 
 probe '9Ez.psm'
  verts = [
