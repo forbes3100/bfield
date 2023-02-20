@@ -1096,8 +1096,8 @@ class Source(Block):
                 # want E field to point away from + end of source
                 scale *= -1
             else:
-                # TODO: soft source: why scale/1000? and why not -1?
-                scale /= 1000
+                # soft-source value is V_thevenin in place of E
+                scale *= self.sim.dx
 
         cmd = (
             f"S {ob.name} {ex} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
