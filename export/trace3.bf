@@ -376,7 +376,7 @@ matmesh '3L1-Leads'
   (33, 35, 19),
  ]
  loc = (2.7, -0.3, 0.8)
- parent '4L1.T3'
+ parent = '4L1.T3'
  colls = [
   'Component_L1Ferrite.T3',
  ]
@@ -460,7 +460,7 @@ matmesh '3R1-Leads'
   (33, 35, 19),
  ]
  loc = (3.0, -0.2, 0.8)
- parent '4R1.T3'
+ parent = '4R1.T3'
  colls = [
   'Component_R1.T3',
  ]
@@ -6144,7 +6144,7 @@ matmesh '5Solder1.T3'
   (5, 4, 8, 10),
  ]
  loc = (2.97689, 0.04733, 0.85033)
- parent '4L1_coil_cyl_4loop.T3'
+ parent = '4L1_coil_cyl_4loop.T3'
  colls = [
   'Component_L1Coil.T3',
  ]
@@ -6178,7 +6178,7 @@ matmesh '5Solder2.T3'
   (5, 4, 8, 10),
  ]
  loc = (4.49689, 0.04733, 0.85033)
- parent '4L1_coil_cyl_4loop.T3'
+ parent = '4L1_coil_cyl_4loop.T3'
  colls = [
   'Component_L1Coil.T3',
  ]
@@ -6956,7 +6956,7 @@ matmesh 'L0603-Wire-2turns'
   (84, 91, 95, 92),
  ]
  loc = (3.2, -0.3, 0.8)
- parent '4L1.T3'
+ parent = '4L1.T3'
  colls = [
   'Component_L1Ferrite.T3',
  ]

@@ -161,7 +161,7 @@ def export_ob(ob, out):
     s += f"loc = {repr_vec(ob.location)}\n"
 
     if ob.parent:
-        s += f" parent '{ob.parent.name}'\n"
+        s += f" parent = '{ob.parent.name}'\n"
 
     colls = ob.users_collection
     if colls:
