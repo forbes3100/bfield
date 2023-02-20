@@ -1858,12 +1858,24 @@ void Space::allocate() {
         throw new Err("%s bounds too small?", name);
     if (N.i > 1000 || N.j > 1000 || N.k > 1000)
         throw new Err("block space size exceeded");
+    
+    // original grid dimensions
+    Norig = N;
+
+    // round up the fastest axis width so that the total including PML (nb)
+    // is an even multiple of the vector width (wv)
     N.i = (N.i + 2*nb + wv - 1) / wv * wv - 2*nb;
+
+    // Ncb includes the PML boundary
     Ncb = N + 2*ncb;
     ncbv = ncb - 1 + wv;
+
+    // entire fastest axis includes at least one PML vector on either side
     Nv = Ncb;
     Nv.i = max(N.i+2*wv, Nv.i);
     nCells = Nv.k * Nv.j * Nv.i;
+
+    // k and j strides
     k1 = Nv.j * Nv.i;
     J1 = Nv.i;
 

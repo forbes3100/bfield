@@ -407,6 +407,8 @@ void copyLC2Field() {
 // Read LC probe-out files. Files and dest array are in k,j,i order, no PML.
 
 void readLCData1(const char* fileNameFmt, double3* dest, int step) {
+    size_t lorignx = osp->Norig.i;
+    size_t lorigny = osp->Norig.j;
     size_t lnxy = Nl.i * Nl.j;
     size_t _ = 0;
     //printf("readLCData %s to %ldx%ldx%ld\n",
@@ -422,21 +424,27 @@ void readLCData1(const char* fileNameFmt, double3* dest, int step) {
             FILE* f = fopen(path, "r");
             if (f == NULL)
                 throw new Err("couldn't read LC file %s", path);
-            int ij = 0;
-            for ( ; ij < lnxy-6; ij += 6) {
-                _ = fscanf(f, "%13le%13le%13le%13le%13le%13le\n",
-                       &d[0].x, &d[1].x, &d[2].x,
-                       &d[3].x, &d[4].x, &d[5].x);
-                //printf("%d:Hlc.%c[%ld,%ld,%ld]=(%g %g %g %g %g %g)\n",
-                //       step, axisc, ij-(ij/Nl.i*Nl.i), ij/Nl.i, k,
-                //       d[0].x, d[1].x, d[2].x,
-                //       d[3].x, d[4].x, d[5].x);
-                d += 6;
-            }
-            for ( ; ij < lnxy; ij++) {
-                _ = fscanf(f, "%13le", &d->x);
-                d++;
-            }
+            for (int j = 0; j < lorigny; j++) {
+                int i = 0;
+                for ( ; i < lorignx-6; i += 6) {
+                    _ = fscanf(f, "%13le%13le%13le%13le%13le%13le\n",
+                               &d[0].x, &d[1].x, &d[2].x,
+                               &d[3].x, &d[4].x, &d[5].x);
+                    //printf("%d:Hlc.%c[%ld,%ld,%ld]=(%g %g %g %g %g %g)\n",
+                    //       step, axisc, ij-(ij/Nl.i*Nl.i), ij/Nl.i, k,
+                    //       d[0].x, d[1].x, d[2].x,
+                    //       d[3].x, d[4].x, d[5].x);
+                    d += 6;
+                }
+                for ( ; i < lorignx; i++) {
+                    _ = fscanf(f, "%13le", &d->x);
+                    d++;
+                }
+                for ( ; i < Nl.i; i++) {
+                    d->x = d->y = d->z = 0.;
+                    d++;
+                }
+          }
             size_t pos = ftell(f);
             fseek(f, 0, SEEK_END);
             size_t rem = ftell(f) - pos - 1;

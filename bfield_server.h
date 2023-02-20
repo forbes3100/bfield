@@ -426,6 +426,7 @@ struct ProbeGeneric: Probe {
 
 struct Space: MatBlock {
     int3    N;          // interior grid dimensions, in cells
+    int3    Norig;      // dimensions not including vector allowances
     int3    Ncb;        // grid dimensions, in cells, including PML+cond
     int3    Nv;         // grid dimensions, vector-aligned
     int     nb;         // PML area thickness
