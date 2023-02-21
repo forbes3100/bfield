@@ -2384,6 +2384,9 @@ class Sim:
                 if fob.verbose >= 2:
                     print("  createBlocks verified", ob.name)
                 over = overlap(fob, ob)
+                if bt == 'PROBE':
+                    # probes are allowed anywhere
+                    over = True
                 if not over:
                     if fob.verbose >= 2:
                         print("no overlap for", ob.name)
@@ -2393,7 +2396,8 @@ class Sim:
                     ob = block.ob
                     if fob.verbose >= 2:
                         print("=====", ob.name, bt, block_class)
-                        print("  overlap=", fv(over[0]), fv(over[1]))
+                        if over is not True:
+                            print("  overlap=", fv(over[0]), fv(over[1]))
                     for _ in block.prepare_gen():
                         yield
                     self.blocks.append(block)
@@ -2471,7 +2475,7 @@ class Sim:
         for block in self.blocks:
             if hasattr(block, 'do_step') and not block.ob.hide_viewport:
                 block.do_step()
-            stop_ps = self.fields_ob.get('stop_ps', 0)
+            stop_ps = self.stop_ps = self.fields_ob.get('stop_ps', 0)
             if stop_ps > 100000:
                 # sim sends a 6-digit step number back with each ack
                 warn("Stop time limited to 100000 max.")
