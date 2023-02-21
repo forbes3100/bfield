@@ -1997,13 +1997,21 @@ void Space::stepH() {
  
     // optionally print field states
     if (verbose == 2) {
-        size_t idx1 = idxcell(2,2,1);
-        size_t idx2 = idxcell(2,2,2);
-        printf("%d: sin=% 6.3g", step, E.x[idx2]);
-        printf("  H[2,2,1]=[% 6.3g, % 6.3g, % 6.3g]",
-               H.x[idx1]/zd, H.y[idx1]/zd, H.z[idx1]/zd);
-        printf("  E[2,2,1]=[% 6.3g, % 6.3g, % 6.3g]\n",
-               E.x[idx1], E.y[idx1], E.z[idx1]);
+        const char* probeName = "9E_mobile";
+        Probe* probe = Probe::find(probeName);
+        if (probe) {
+            int i = probe->Is.i;
+            int j = probe->Is.j;
+            int k = probe->Is.k;
+            size_t idx1 = idxcell(i, j, k);
+            printf("%d %s: idx=%ld H[%d,%d,%d]=[% 9.3g, % 9.3g, % 9.3g],",
+                   step, probeName, idx1, i, j, k,
+                   H.x[idx1]/zd, H.y[idx1]/zd, H.z[idx1]/zd);
+            printf(" E=[% 9.3g, % 9.3g, % 9.3g]\n",
+                   E.x[idx1], E.y[idx1], E.z[idx1]);
+        } else {
+            printf("(StepH verbose 2: probe %s not found)\n", probeName);
+        }
     }
     if (verbose == 4) {
         // (-2.5, -1.4, -0.2) fields=(-2.2, -1.5, -0.0) --> (-3,1,-2)
