@@ -1767,7 +1767,8 @@ SubSpace::SubSpace(char** args, int argc): Space(args, argc-1) {
 
 OuterSpace::OuterSpace(char** args, int argc): Space(args, argc-3) {
     dx =      atof(args[9]) * unit;
-    conductBorder = atoi(args[10]);
+    //conductBorder = atoi(args[10]);
+    conductBorder = 0;
     ncb =       atoi(args[11]) + 1;
 }
 
@@ -1979,7 +1980,10 @@ void Space::stepH() {
         for (int j = ba; j < M.j; j++) {
             size_t idx = idxcell(ba,j,k);
             size_t ic = idx / wv;
-            for (int i = ba; i < M.i; i += wv) {
+            int i = ba;
+            int ivEnd = M.i - wv + 1;
+            // main H loop, vectorized
+            for ( ; i < ivEnd; i += wv) {
                 vH.x[ic] = vmH1.x[ic] * vH.x[ic] +
                            vmH2.x[ic] * ((vE.z[ic+vJ1] - vE.z[ic]) -
                                          (vE.y[ic+vk1] - vE.y[ic]));
@@ -1991,6 +1995,19 @@ void Space::stepH() {
                                          (vE.x[ic+vJ1] - vE.x[ic]));
                 idx += wv;
                 ic++;
+            }
+            // do remainder as scalars
+            for ( ; i < M.i; i++) {
+                H.x[idx] = mH1.x[idx] * H.x[idx] +
+                           mH2.x[idx] * ((E.z[idx+J1] - E.z[idx]) -
+                                         (E.y[idx+k1] - E.y[idx]));
+                H.y[idx] = mH1.y[idx] * H.y[idx] +
+                           mH2.y[idx] * ((E.x[idx+k1] - E.x[idx]) -
+                                         (E.z[idx+1] - E.z[idx]));
+                H.z[idx] = mH1.z[idx] * H.z[idx] +
+                           mH2.z[idx] * ((E.y[idx+1] - E.y[idx]) -
+                                         (E.x[idx+J1] - E.x[idx]));
+                idx++;
             }
         }
     }
@@ -2040,22 +2057,45 @@ void OuterSpace::stepH() {
     // conductive outer 1-cell border: tangential E and normal H are zero
     if (conductBorder) {
         for (int j = -ncb; j < M.j; j++) {
-            size_t ic = idxcell(-ncb,j,-ncb) / wv;
-            for (int i = -ncb; i < M.i; i += wv) {
-                // step all H[i,j,0], but with z terms removed
+            size_t idx = idxcell(-ncb,j,-ncb);
+            size_t ic = idx / wv;
+            int i = -ncb;
+            int ivEnd = M.i - wv + 1;
+            if (step == 9 /* && (idx > 2922-65 && idx < 2922+65) */) {
+                printf("");
+            }
+            // step all H[i,j,0], but with z terms removed, vectorized
+            for ( ; i < ivEnd; i += wv) {
                 vH.x[ic] -= vmH2.x[ic] * (vE.y[ic+vk1] - vE.y[ic]);
                 vH.y[ic] += vmH2.y[ic] * (vE.x[ic+vk1] - vE.x[ic]);
                 // want H[i,j,M.k], but it reaches beyond border
+                idx += wv;
                 ic++;
+            }
+            // remainder as scalars
+            for ( ; i < M.i; i++) {
+                H.x[idx] -= mH2.x[idx] * (E.y[idx+k1] - E.y[idx]);
+                H.y[idx] += mH2.y[idx] * (E.x[idx+k1] - E.x[idx]);
+                idx++;
             }
         }
         for (int k = -ncb; k < M.k; k++) {
-            size_t ic = idxcell(ba,-ncb,k) / wv;
-            for (int i = ba; i < M.i; i += wv) {
-                // step all H[i,0,k], but with y terms removed
+            size_t idx = idxcell(ba,-ncb,k);
+            size_t ic = idx / wv;
+            // step all H[i,0,k], but with y terms removed, vectorized
+            int i = ba;
+            int ivEnd = M.i - wv + 1;
+            for ( ; i < ivEnd; i += wv) {
                 vH.x[ic] += vmH2.x[ic] * (vE.z[ic+vJ1] - vE.z[ic]);
                 vH.z[ic] -= vmH2.z[ic] * (vE.x[ic+vJ1] - vE.x[ic]);
+                idx += wv;
                 ic++;
+            }
+            // remainder as scalars
+            for ( ; i < M.i; i++) {
+                H.x[idx] += mH2.x[idx] * (E.z[idx+J1] - E.z[idx]);
+                H.z[idx] -= mH2.z[idx] * (E.x[idx+J1] - E.x[idx]);
+                idx++;
             }
         }
         for (int j = ba; j < M.j; j++) {
@@ -2082,8 +2122,10 @@ void Space::stepE() {
         for (int j = ba; j < M.j; j++) {
             size_t idx = idxcell(ba,j,k);
             size_t ic = idx / wv;
-            for (int i = ba; i < M.i; i += wv) {
-                // update equations
+            int i = ba;
+            int ivEnd = M.i - wv + 1;
+            // main E loop, vectorized
+            for ( ; i < ivEnd; i += wv) {
                 vE.x[ic] = vmE1.x[ic] * vE.x[ic] +
                            vmE2.x[ic] * ((vH.z[ic] - vH.z[ic-vJ1]) -
                                          (vH.y[ic] - vH.y[ic-vk1]) - vJ.x[ic]);
@@ -2095,6 +2137,19 @@ void Space::stepE() {
                                          (vH.x[ic] - vH.x[ic-vJ1]) - vJ.z[ic]);
                 idx += wv;
                 ic++;
+            }
+            // do remainder as scalars
+            for ( ; i < M.i; i++) {
+                E.x[idx] = mE1.x[idx] * E.x[idx] +
+                           mE2.x[idx] * ((H.z[idx] - H.z[idx-J1]) -
+                                         (H.y[idx] - H.y[idx-k1]) - J.x[idx]);
+                E.y[idx] = mE1.y[idx] * E.y[idx] +
+                           mE2.y[idx] * ((H.x[idx] - H.x[idx-k1]) -
+                                         (H.z[idx] - H.z[idx-1]) - J.y[idx]);
+                E.z[idx] = mE1.z[idx] * E.z[idx] +
+                           mE2.z[idx] * ((H.y[idx] - H.y[idx-1]) -
+                                         (H.x[idx] - H.x[idx-J1]) - J.z[idx]);
+                idx++;
             }
         }
     }
@@ -2125,8 +2180,10 @@ void OuterSpace::stepE() {
             size_t ic = idx / wv;
             size_t idxh = idx + (Ncb.k-1)*vk1;
             size_t ich = idxh / wv;
-            for (int i = ba; i < K.i; i += wv) {
-                // step all E[i,j,0] and E[i,j,h], but with x,y terms removed
+            // step all E[i,j,0] and E[i,j,h], but with x,y terms removed
+            int i = ba;
+            int ivEnd = K.i - wv + 1;
+            for ( ; i < ivEnd; i += wv) {
                 vE.z[ic] += vmE2.z[ic] * ((vH.y[ic] - *(vdbl*)&H.y[idx-1]) -
                                           (vH.x[ic] - vH.x[ic-vJ1]));
                 vE.z[ich] += vmE2.z[ich] * ((vH.y[ich] -*(vdbl*)&H.y[idxh-1]) -
@@ -2136,14 +2193,25 @@ void OuterSpace::stepE() {
                 idxh += wv;
                 ich++;
             }
-        }
+            // remainder as scalars
+            for ( ; i < K.i; i++) {
+                E.z[idx] += mE2.z[idx] * ((H.y[idx] - H.y[idx-1]) -
+                                          (H.x[idx] - H.x[idx-J1]));
+                E.z[idxh] += mE2.z[idxh] * ((H.y[idxh] - H.y[idxh-1]) -
+                                            (H.x[idxh] - H.x[idxh-J1]));
+                idx++;
+                idxh++;
+            }
+       }
         for (int k = ba; k < M.k; k++) {
             size_t idx = idxcell(ba,-ncb,k);
             size_t ic = idx / wv;
             size_t idxh = idx + (Ncb.j-1)*vJ1;
             size_t ich = idxh / wv;
-            for (int i = ba; i < K.i; i += wv) {
-                // step all E[i,0,k] and E[i,h,k], but with x,z terms removed
+            // step all E[i,0,k] and E[i,h,k], but with x,z terms removed
+            int i = ba;
+            int ivEnd = K.i - wv + 1;
+            for ( ; i < ivEnd; i += wv) {
                 vE.y[ic] += vmE2.y[ic] * ((vH.x[ic] - vH.x[ic-vk1]) -
                                           (vH.z[ic] - *(vdbl*)&H.z[idx-1]));
                 vE.y[ich] += vmE2.y[ich] * ((vH.x[ich] - vH.x[ich-vk1]) -
@@ -2152,6 +2220,15 @@ void OuterSpace::stepE() {
                 ic++;
                 idxh += wv;
                 ich++;
+            }
+            // remainder as scalars
+            for ( ; i < K.i; i++) {
+                E.y[idx] += mE2.y[idx] * ((H.x[idx] - H.x[idx-k1]) -
+                                          (H.z[idx] - H.z[idx-1]));
+                E.y[idxh] += mE2.y[idxh] * ((H.x[idxh] - H.x[idxh-k1]) -
+                                            (H.z[idxh] - H.z[idxh-1]));
+                idx++;
+                idxh++;
             }
         }
         for (int j = ba; j < M.j; j++) {

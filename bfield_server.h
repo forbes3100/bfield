@@ -31,7 +31,7 @@
 //#define NO_HE_OFFSET_GRID
 //#define NO_HE_OFFSET_HALF
 #define INCLUSIVE_ALPHA
-//#define USE_VECTORS
+#define USE_VECTORS
 #define DISPLAY_H_V_PER_M
 
 const int maxName = 30;
@@ -419,7 +419,7 @@ struct ProbeGeneric: Probe {
 // i:                     ba     0                 N     M
 //       + . . // . . . +-+-PML-+------ // -------+-PML-+-+ . . . // . . +
 // idx:   0             15 16    20                28   32 33             48
-//                      \_____________ Ncb.i _____________/   (N.i=16, wv=16)
+//                      \_____________ Ncb.i _____________/   (N.i=8, wv=16)
 // ic:    0                1                             2                3
 //       +---- // --------+------------ // -------------+-------- // ----+
 //       \____________________________ Nv.i _____________________________/

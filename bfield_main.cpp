@@ -300,7 +300,7 @@ void server() {
                 size_t r = recv(fd, text, sizeof(text)-1, 0);
                 text[r] = '\0';
                 //if ((osp && osp->verbose > 0) || mode == IDLE)
-                if (osp && osp->verbose > 0)
+                if (osp && osp->verbose > 2)
                     printf("cmd: %s\n", text);
 
                 try {
