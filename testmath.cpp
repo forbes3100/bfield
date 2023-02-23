@@ -609,22 +609,8 @@ void testSmall() {
     osp->ncb = 5;       // PML border thickness
     osp->verbose = 3;   // debug level
 
-    Source* s = new Source("8Src", double3(2., 2., 2.), double3(3., 2., 2.));
-    s->excite = 'E';
-    //s->setFunc("Custom");
-    //s->customFunc = gaussianLC;
-    s->setFunc("Gaussian_Pulse");
-    //s->isHard = false;
-    //s->R = 50.;
-    s->isHard = true;
-    s->axis = 0;
-    //s->scale = 0.168535 / 0.22018;
-    s->scale = 1.;
-    s->tstart = 0.;
-    s->trise = 1e-10;
-    s->duration = 1e-10;
-    s->tfall = 0.;
-    s->sigma = pi;
+    new HardSource("8Src", double3(2., 2., 2.), double3(3., 2., 2.), 'E',
+                   "Gaussian_Pulse", NULL, POS_X, 1., 0., 1e-10, 1e-10, 0.);
 
     gaussianInit();
     osp->runInit();
@@ -651,26 +637,12 @@ void testMedium() {
 
 #define MEDIUM_HARD
 #ifdef MEDIUM_HARD
-    Source* s = new Source("8Src", double3(3., 3., 3.), double3(5., 5., 5.));
-    s->isHard = true;
-    s->setFunc("Gaussian_Pulse");
-    s->scale = 1.;
-    s->sigma = pi;
+    new HardSource("8Src", double3(3., 3., 3.), double3(5., 5., 5.), 'E',
+                   "Gaussian_Pulse", NULL, POS_X, 1., 0., 1e-10, 1e-10, 0.);
 #else
-    Source* s = new Source("8Src", double3(3., 3., 3.), double3(5., 5., 5.));
-    s->isHard = false;
-    s->R = 50.;
-    s->setFunc("Gaussian_Pulse");
-    s->scale = 0.0012;
-    s->sigma = pi;
+    new SoftSource("8Src", double3(3., 3., 3.), double3(5., 5., 5.), 'E',
+                   "Gaussian_Pulse", NULL, POS_X, 1., 0., 1e-10, 1e-10, 0., 50.);
 #endif
-    s->excite = 'E';
-    s->axis = 0;
-    s->tstart = 0.;
-    s->trise = 1e-10;
-    s->duration = 1e-10;
-    s->tfall = 0.;
-    s->verbose = true;
 
     gaussianInit();
     osp->runInit();
@@ -704,17 +676,8 @@ void testDielectric() {
                                   double3(5.0, 0., 0.), double3(16., 8., 8.));
 #endif
 
-    Source* s = new Source("8Src", double3(4., 4., 4.), double3(5., 4., 4.));
-    s->excite = 'E';
-    s->isHard = true;
-    s->scale = 1.;
-    s->setFunc("Gaussian_Pulse");
-    s->axis = 0;
-    s->tstart = 0.;
-    s->trise = 1e-10;
-    s->duration = 2.3e-11;
-    s->tfall = 0.;
-    s->sigma = pi;
+    new HardSource("8Src", double3(4., 4., 4.), double3(5., 4., 4.), 'E',
+                   "Gaussian_Pulse", NULL, POS_X, 1., 0., 1e-10, 2.3e-11, 0.);
 
     gaussianInit();
     osp->runInit();
@@ -750,17 +713,8 @@ void testConductor() {
     //hsize = double3(7., 5., 12.) * 0.5;
     new MatBlock("5Conductor", "C", copper, loc, loc+size);
 
-    Source* s = new Source("8Src", double3(4., 6., 5.), double3(4., 6., 6.));
-    s->excite = 'E';
-    s->setFunc("Gaussian_Pulse");
-    s->isHard = true;
-    s->axis = 2;
-    s->scale = 1.;
-    s->tstart = 0.;
-    s->trise = 1e-10;
-    s->duration = 1;
-    s->tfall = 1e-10;
-    s->sigma = pi;
+    new HardSource("8Src", double3(4., 6., 5.), double3(4., 6., 6.), 'E',
+                   "Gaussian_Pulse", NULL, POS_Z, 1., 0., 1e-10, 1., 1e-10);
 
     gaussianInit();
     osp->runInit();
@@ -789,24 +743,9 @@ void testZCoax() {
     new MatBlock("5Cond", "C", copper, double3(3, 5, 5), double3(12,7, 7 ));
 
     // LC: Gaussian_Pulse +X Voltage scale=1 R=50 soft
-    Source* s = new Source("8Src",     double3(1, 5, 5), double3(3, 7, 7 ));
-    s->excite = 'E'; // convert voltage across source to E field strength
-    s->setFunc("Custom");
-    s->customFunc = gaussianLC;
-    s->isHard = false;
-    s->R = 50.;
-    s->axis = 0;
-    double dist = (7 - 5) * 0.001; // mm to m
-    s->scale = 1. / dist * osp->dx; // the *dx converts it to V_thevenin
-    double fudge = 0.0842674 / 0.11009;
-    printf("%s scale = %g (fudge = %g)\n",
-           s->name, s->scale, fudge);
-    s->scale *= fudge;  // a fudge for step 1 match
-    s->tstart = 0.;
-    s->trise = 1e-10;
-    s->duration = 1;
-    s->tfall = 1e-10;
-    s->sigma = pi;
+    double fudge = 0.0842674 / 0.11009; // a fudge scale for step 1 match
+    new SoftSource("8Src", double3(1, 5, 5), double3(3, 7, 7 ), 'E',
+                   NULL, gaussianLC, POS_X, fudge, 0., 1e-10, 1, 1e-10, 50.);
 
     // probe used by 'verbose 2' printing in stepH()
     const char* args[] =
@@ -853,21 +792,8 @@ void testTrace1sm() {
 #endif
     loc = double3(-0.8, 0.05, 0.5);
     hsize = double3(0.2, 0.3, 0.4) * 0.5;
-    Source* s = new Source("8Src", loc-hsize, loc+hsize);
-    s->excite = 'E';
-    s->setFunc("Custom");
-    s->customFunc = gaussianLC;
-    s->isHard = false;
-    s->R = 50.;
-    s->axis = 2;
-    //s->scale = 0.3350746548;
-    s->scale = 1.;
-    s->sigma = pi;
-    s->tstart = 0.;
-    s->trise = 50e-12;
-    s->duration = 1;
-    s->tfall = 10e-12;
-    s->sigma = pi;
+    new SoftSource("8Src", loc-hsize, loc+hsize, 'E',
+                   NULL, gaussianLC, POS_Z, 1., 0., 50e-12, 1, 10e-12, 50.);
 
     gaussianInit();
     osp->runInit();
@@ -931,18 +857,8 @@ void testLarge() {
 
     double3 loc = double3(20., 20., 20.);
     double3 hsize = double3(1., 0., 0.) * 0.5;
-    Source* s = new Source("8Src", loc-hsize, loc+hsize);
-    s->excite = 'E';
-    s->setFunc("Custom");
-    s->customFunc = gaussianLC;
-    s->isHard = true;
-    s->axis = 0;
-    s->scale = 1.;
-    s->tstart = 0.;
-    s->trise = 1e-10;
-    s->duration = 1e-10;
-    s->tfall = 0.;
-    s->sigma = pi;
+    new HardSource("8Src", loc-hsize, loc+hsize, 'E',
+                   NULL, gaussianLC, POS_X, 1., 0., 1e-10, 1e-10, 0.);
 
     gaussianInit();
     osp->runInit();
@@ -967,26 +883,14 @@ void testWall() {
     osp->ncb = 1;
     osp->verbose = 3;
 
-    Source* s = new Source("8Src", double3(2., 2., 2.), double3(3., 2., 2.));
-    s->excite = 'E';
-    s->setFunc("Custom");
-    s->customFunc = gaussianLC;
 //#define VOLTS_TEST
 #ifdef VOLTS_TEST
-    s->isHard = false;
-    s->R = 50.;
-    s->scale = 1.;
+    new SoftSource("8Src", double3(2., 2., 2.), double3(3., 2., 2.), 'E',
+                   NULL, gaussianLC, POS_X, 1., 0., 1e-10, 1e-10, 0., 50.);
 #else
-    s->isHard = true;
-    //s->scale = 0.000168535 / 0.0001;
-    s->scale = 1.;
+    new HardSource("8Src", double3(2., 2., 2.), double3(3., 2., 2.), 'E',
+                   NULL, gaussianLC, POS_X, 1., 0., 1e-10, 1e-10, 0.);
 #endif
-    s->axis = 0;
-    s->tstart = 0.;
-    s->trise = 1e-10;
-    s->duration = 1e-10;
-    s->tfall = 0.;
-    s->sigma = pi;
 
     gaussianInit();
     osp->runInit();
@@ -1030,20 +934,8 @@ void testPlatesm() {
 
     loc = double3(4.5, 6.5, 6.);
     hsize = double3(3., 3., 4.) * 0.5;
-    Source* s = new Source("src1", loc-hsize, loc+hsize);
-    s->excite = 'E';
-    s->setFunc("Custom");
-    s->customFunc = gaussianLC;
-    s->isHard = false;
-    s->R = 50.;
-    s->axis = 2;
-    //s->scale = 1.29003487;
-    s->scale = 1.;
-    s->tstart = 0.;
-    s->trise = 1e-10;
-    s->duration = 1;
-    s->tfall = 1e-10;
-    s->sigma = pi;
+    new SoftSource("8Src", loc-hsize, loc+hsize, 'E',
+                   NULL, gaussianLC, POS_Z, 1., 0., 1e-10, 1, 1e-10, 50.);
 
     gaussianInit();
     osp->runInit();
@@ -1060,11 +952,11 @@ Test tests[] = {
     {testMedium, 0},
     {testDielectric, 0},
     {testConductor, 1},
-    {testZCoax, 18},
+    {testZCoax, 30},
     {testAlpha, 0},
     {testWall, 1},
     {testLarge, 0},
-    //{testPlatesm, 64},
+    {testPlatesm, 64},
 };
 
 // ----------------------------------------------------------------------------
@@ -1080,7 +972,7 @@ int main(int argc, const char* argv[]) {
     showAll = false;
 
     try {
-#if 0
+#if 1
         // run all tests
         for (Test& test: tests) {
             (test.fn)();
