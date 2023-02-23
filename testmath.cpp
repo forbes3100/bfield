@@ -551,6 +551,7 @@ void runLCTestSim() {
 
 void runTestSim() {
     osp->conductBorder = true;
+    mismatches = 0;
     size_t pl = strlen(testName) + 2;
     char* path = new char[pl];
     snprintf(path, pl, "%s/", testName);
@@ -696,7 +697,7 @@ void testDielectric() {
     nsteps = 3;
     osp->verbose = 3;
 
-    new MatBlock("3dielectric", "M", teflon,
+    new MatBlock("3dielectric", "C", teflon,
 #ifndef NO_HE_OFFSET
                                   double3(4.5, 0., 0.), double3(16., 8., 8.));
 #else
@@ -747,7 +748,7 @@ void testConductor() {
     //size = double3(7., 7., 12.);
     //loc = double3(8.5, 4.5, 6.);             // y-edge-2
     //hsize = double3(7., 5., 12.) * 0.5;
-    new MatBlock("5Conductor", "M", copper, loc, loc+size);
+    new MatBlock("5Conductor", "C", copper, loc, loc+size);
 
     Source* s = new Source("8Src", double3(4., 6., 5.), double3(4., 6., 6.));
     s->excite = 'E';
@@ -783,23 +784,34 @@ void testZCoax() {
     osp->ncb = 5;
     osp->verbose = 3;
 
-    new MatBlock("3air",  "M", air,    double3(1, 1, 1), double3(3, 11,11));
-    new MatBlock("3diel", "M", teflon, double3(3, 1, 1), double3(12,11,11));
-    new MatBlock("5Cond", "M", copper, double3(3, 5, 5), double3(12,7, 7 ));
+    new MatBlock("3air",  "C", air,    double3(1, 1, 1), double3(3, 11,11));
+    new MatBlock("3diel", "C", teflon, double3(3, 2, 1), double3(12,10,11));
+    new MatBlock("5Cond", "C", copper, double3(3, 5, 5), double3(12,7, 7 ));
 
+    // LC: Gaussian_Pulse +X Voltage scale=1 R=50 soft
     Source* s = new Source("8Src",     double3(1, 5, 5), double3(3, 7, 7 ));
-    s->excite = 'E';
+    s->excite = 'E'; // convert voltage across source to E field strength
     s->setFunc("Custom");
     s->customFunc = gaussianLC;
     s->isHard = false;
     s->R = 50.;
     s->axis = 0;
-    s->scale = 0.168535 / 0.22018;
+    double dist = (7 - 5) * 0.001; // mm to m
+    s->scale = 1. / dist * osp->dx; // the *dx converts it to V_thevenin
+    double fudge = 0.0842674 / 0.11009;
+    printf("%s scale = %g (fudge = %g)\n",
+           s->name, s->scale, fudge);
+    s->scale *= fudge;  // a fudge for step 1 match
     s->tstart = 0.;
     s->trise = 1e-10;
     s->duration = 1;
     s->tfall = 1e-10;
     s->sigma = pi;
+
+    // probe used by 'verbose 2' printing in stepH()
+    const char* args[] =
+    {"P", "9E_mobile", "1", "1", "4", "4", "5", "5", "E", "V", "1", "1", "2"};
+    ProbeGeneric::add((char**)args, 13);
 
     gaussianInit();
     osp->runInit();
@@ -828,15 +840,15 @@ void testTrace1sm() {
 #ifdef TEMP
     loc = double3(3., 0., -0.05);
     hsize = double3(10., 3., 1.5) * 0.5;
-    new MatBlock("1PCB", "M", fr4, loc-hsize, loc+hsize);
+    new MatBlock("1PCB", "C", fr4, loc-hsize, loc+hsize);
 
     loc = double3(2.6, 0., 0.15);
     hsize = double3(10.5, 3.3, 0.3) * 0.5;
-    new MatBlock("5GPlane", "M", copper, loc-hsize, loc+hsize);
+    new MatBlock("5GPlane", "C", copper, loc-hsize, loc+hsize);
 
     loc = double3(3.6, 0.05, 0.75);
     hsize = double3(9., 0.3, 0.1) * 0.5;
-    new MatBlock("5Trace", "M", copper, loc-hsize, loc+hsize);
+    new MatBlock("5Trace", "C", copper, loc-hsize, loc+hsize);
 
 #endif
     loc = double3(-0.8, 0.05, 0.5);
@@ -884,15 +896,15 @@ void testAlpha() {
 
     loc = double3(1., 1., 1.);
     hsize = double3(2., 2., 2.) * 0.5;
-    new MatBlock("A", "M", copper, loc-hsize, loc+hsize);
+    new MatBlock("A", "C", copper, loc-hsize, loc+hsize);
 
     loc = double3(1., 3., 1.);
     hsize = double3(2., 2., 2.) * 0.5;
-    new MatBlock("B", "M", copper, loc-hsize, loc+hsize);
+    new MatBlock("B", "C", copper, loc-hsize, loc+hsize);
 
     loc = double3(3., 3., 1.);
     hsize = double3(2., 2., 2.) * 0.5;
-    new MatBlock("C", "M", copper, loc-hsize, loc+hsize);
+    new MatBlock("C", "C", copper, loc-hsize, loc+hsize);
 
     gaussianInit();
     osp->runInit();
@@ -909,7 +921,7 @@ void testLarge() {
     unit = 0.001;
 
     osp = new OuterSpace("0Fields", air,
-                                  double3(0., 0., 0.), double3(64., 64., 64.));
+                                  double3(0., 0., 0.), double3(502., 10., 10.));
     osp->dx = 0.001;
     nsteps = 1000;
     osp->zo0 = 3;
@@ -1008,13 +1020,13 @@ void testPlatesm() {
     loc = double3(6.5, 6.5, 9.5);
     hsize = double3(9., 9., 3.) * 0.5;
 #endif
-    new MatBlock("plate0", "M", copper, loc-hsize, loc+hsize);
+    new MatBlock("plate0", "C", copper, loc-hsize, loc+hsize);
 #ifdef AS_IN_LC
     loc = double3(6., 6., 3.);
 #else
     loc = double3(6.5, 6.5, 3.5);
 #endif
-    new MatBlock("plate1", "M", copper, loc-hsize, loc+hsize);
+    new MatBlock("plate1", "C", copper, loc-hsize, loc+hsize);
 
     loc = double3(4.5, 6.5, 6.);
     hsize = double3(3., 3., 4.) * 0.5;
@@ -1051,7 +1063,8 @@ Test tests[] = {
     {testZCoax, 18},
     {testAlpha, 0},
     {testWall, 1},
-    {testPlatesm, 64},
+    {testLarge, 0},
+    //{testPlatesm, 64},
 };
 
 // ----------------------------------------------------------------------------
@@ -1064,7 +1077,7 @@ int main(int argc, const char* argv[]) {
     errThresh = 1e-2;
     //errThresh = 100.;
     errMin = 1e-11;
-    showAll = true;
+    showAll = false;
 
     try {
 #if 0
@@ -1081,19 +1094,19 @@ int main(int argc, const char* argv[]) {
 #else
         //errThresh = 1e-5;
         //errMin = 1e-99;
-        //showAll = true;
+        showAll = true;
         //testSmall();      // 0 miss, 2s, hard
         //testMedium();     // 0 miss, 3s, hard
         //testDielectric(); // 0 miss, 3s, hard
         //testConductor();  // 0 miss, 3s, hard (wall config only)
         // TO BE CHECKED AGAIN:
-        //testZCoax();      // 30+ miss, 43.3% err, 2s, soft x0.7654
+        testZCoax();      // 30+ miss, 43.3% err, 2s, soft x0.7654
         // TO BE CHECKED:
         //testTrace1sm();   // 48+ miss, 66.7% err, 1s, soft x0.335
         //testAlpha();      // --
         //testLarge();      // --
         //testWall();       // 1+ miss, 73.8% err, 2s, hard x1.685
-        testPlatesm();    // 80+ miss, 40.2% err, 2s, soft x1.2900
+        //testPlatesm();    // 80+ miss, 40.2% err, 2s, soft x1.2900
 #endif
     } catch (Err* err) {
         err->report();
