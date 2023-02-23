@@ -482,7 +482,7 @@ struct Space: MatBlock {
 
     Space();
     Space(const char* name, Material* mat, double3& Bs, double3& Be):
-                      MatBlock(name, "M", mat, Bs, Be, false) { insert(); }
+                      MatBlock(name, "C", mat, Bs, Be, false) { insert(); }
     Space(char** args, int argc): MatBlock(args, argc, false) { insert(); }
     ~Space();
     void insert();
