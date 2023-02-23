@@ -752,10 +752,27 @@ void LayerMBlock::place() {
 
 Source* Source::sources;
 
-Source::Source(const char* name, double3 Bs, double3 Be) {
+Source::Source(const char* name, double3 Bs, double3 Be, char excite,
+               const char* func, double (*customFunc)(Source* src, double t),
+               int axis, double scale, double tstart, double trise,
+               double duration, double tfall) {
     strncpy(this->name, name, maxName);
     Bsg = Bs * unit;
     Beg = Be * unit;
+    this->excite = excite;
+    this->customFunc = customFunc;
+    if (customFunc) {
+        func = "Custom";
+    }
+    setFunc(func);
+    this->axis =     axis;
+    this->scale =    scale;
+    this->tstart =   tstart;
+    this->trise =    trise;
+    this->duration = duration;
+    this->tfall =    tfall;
+    sigma = pi;
+
     next = sources;
     sources = this;
 }
@@ -951,6 +968,31 @@ void Source::postInjectAll() {
 }
 
 // ============================================================================
+
+
+SoftSource::SoftSource(const char* name, double3 Bs, double3 Be, char excite,
+                       const char* func, double (*customFunc)(Source* src, double t),
+                       int axis, double scale, double tstart, double trise,
+                       double duration, double tfall, double R) :
+            Source(name, Bs, Be, excite, func, customFunc, axis, scale, tstart,
+                   trise, duration, tfall) {
+    isHard = false;
+    this->R = R;
+    double dist = (Be[axis] - Bs[axis]) * 0.001; // mm to m
+    this->scale = scale / dist * osp->dx; // the *dx converts it to V_thevenin
+}
+
+HardSource::HardSource(const char* name, double3 Bs, double3 Be, char excite,
+                       const char* func, double (*customFunc)(Source* src, double t),
+                       int axis, double scale, double tstart, double trise,
+                       double duration, double tfall) :
+            Source(name, Bs, Be, excite, func, customFunc, axis, scale, tstart,
+                   trise, duration, tfall) {
+    isHard = true;
+}
+
+
+// ============================================================================
 // Probe block for measuring fields.
 
 Probe* Probe::probes;
@@ -993,8 +1035,6 @@ Probe* Probe::find(const char* name) {
     for ( ; p; p = (Probe*)p->next)
         if (strcmp(p->name, name) == 0)
             break;
-    if (!p)
-        throw new Err("probe %s not found", name);
     return p;
 }
 
@@ -1144,6 +1184,8 @@ void Probe::writeCells(int fd) {
 
 void Probe::writeCells(int fd, char* name) {
     Probe* p = Probe::find(name);
+    if (!p)
+        throw new Err("probe %s not found", name);
     if (p->verbose)
         p->print();
     p->writeCells(fd);
