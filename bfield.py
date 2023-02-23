@@ -783,14 +783,14 @@ class FieldsBlock(MatBlock):
         sim = self.sim
         sim.send("A units mm")
         sim.send(f"A us_poll {sim.us_poll}")
-        sim.send(f"A verbose {sim.verbose}")
         cmd = (
-            f"F {ob.name} {mat.name} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
+            f"FC {ob.name} {mat.name} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
             f"{Bs.z:g} {Be.z:g} {sim.dx:g} 1 {sim.pml_border}"
         )
         if sim.verbose >= 2:
             print(cmd)
         self.sim.send(cmd)
+        sim.send(f"A verbose {sim.verbose}")
 
 
 class Resistor(MatBlock):
@@ -1080,17 +1080,15 @@ class Source(Block):
         scale = ob.s_scale
         axis = ord(ob.s_axis[-1]) - ord('X')
         dist = (Be.x - Bs.x, Be.y - Bs.y, Be.z - Bs.z)[axis] * mm
-        if ob.verbose >= 2:
-            print("Source", ob.name, "dist=", dist, "m")
         if ob.s_axis[0] == '-':
             scale *= -1
         ex = ob.s_excitation[0]
+        if ob.verbose >= 2:
+            print(f"Source {ob.name} {ex=} {scale=} {dist=} m")
         if ex == 'V':
             # convert voltage across source to E field strength
             ex = 'E'
             scale /= dist
-            ##if not ob.s_hard:
-            ##    scale *= 2  # assume load matches Rs, dividing Vs by two
         if ex == 'E':
             if ob.s_hard:
                 # want E field to point away from + end of source
@@ -1098,6 +1096,8 @@ class Source(Block):
             else:
                 # soft-source value is V_thevenin in place of E
                 scale *= self.sim.dx
+                if ob.verbose >= 2:
+                    print(f"Soft source {ob.name} {scale=} {self.sim.dx=}")
 
         cmd = (
             f"S {ob.name} {ex} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
@@ -2206,6 +2206,7 @@ class Sim:
         preob = obs[0]
         self.state = INITIALIZING
         self.dx = preob.dx
+        self.fields_ob = None
         self.fields_block = FieldsBlock(preob, self)
         self.fields_ob = fob = self.fields_block.ob
         self.verbose = fob.verbose
@@ -2360,6 +2361,9 @@ class Sim:
 
         # create a block for each object
         for ob in obs:
+            if ob == self.fields_ob:
+                # already did 0Fields object
+                continue
             try:
                 name = ob.name
             except ReferenceError:
