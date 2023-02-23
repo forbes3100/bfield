@@ -352,7 +352,10 @@ struct Source: Block {
     char    excite;
     double  (*customFunc)(Source* src, double t);
 
-    Source(const char* name, double3 Bs, double3 Be);
+    Source(const char* name, double3 Bs, double3 Be, char excite,
+           const char* func, double (*customFunc)(Source* src, double t),
+           int axis, double scale, double tstart, double trise,
+           double duration, double tfall);
     Source(char** args, int argc);
     void setFunc(const char* s) { strncpy(func, s, maxName); }
     static void deleteAll();
@@ -360,6 +363,22 @@ struct Source: Block {
     static void preInjectAll();
     static void postInjectAll();
     static void initICoords() { Block::initICoords((Block*)sources); }
+};
+
+enum Axis {POS_X = 0, POS_Y, POS_Z, NEG_X, NEG_Y, NEG_Z};
+
+struct SoftSource: Source {
+    SoftSource(const char* name, double3 Bs, double3 Be, char excite,
+               const char* func, double (*customFunc)(Source* src, double t),
+               int axis, double scale, double tstart, double trise,
+               double duration, double tfall, double R);
+};
+
+struct HardSource: Source {
+    HardSource(const char* name, double3 Bs, double3 Be, char excite,
+               const char* func, double (*customFunc)(Source* src, double t),
+               int axis, double scale, double tstart, double trise,
+               double duration, double tfall);
 };
 
 // ============================================================================
