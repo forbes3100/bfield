@@ -258,7 +258,7 @@ MatBlock::AStack* MatBlock::aStacks;
 MatBlock::MatBlock(const char* name, const char* mtype, Material* mat,
                    double3 Bs, double3 Be, bool insertMat) {
     strncpy(this->name, name, maxName);
-    this->mtype = mtype[1];
+    this->mtype = mtype[0]; // X Y or Z or cylinders, C for others
     material = mat;
     Bsg = Bs * unit;
     Beg = Be * unit;
@@ -603,9 +603,6 @@ void MatBlock::placeInit() {
     }
 }
 
-// ----------------------------------------------------------------------------
-// Place MatBlocks in field arrays.
-
 void MatBlock::placeAll() {
     for (MatBlock* mb = matBlks; mb; mb = (MatBlock*)mb->next) {
         if ((mb->Ie.k - mb->Is.k) == 0) {
@@ -616,9 +613,6 @@ void MatBlock::placeAll() {
         mb->place();
     }
 }
-
-// ----------------------------------------------------------------------------
-//
 
 void MatBlock::placeFinish() {
     int3 N = sp->N;
@@ -833,7 +827,7 @@ void Source::inject() {
     if (strcmp(func, "Custom") == 0) {
         val = (*customFunc)(this, t);
     }
-    if (osp->verbose > 0 || verbose)
+    if (isHard && (osp->verbose > 0 || verbose))
         printf("%d: src E[%d,%d,%d].%c = %g\n",
                sp->step, Is.i, Is.j, Is.k, 'x'+axis, val);
 
@@ -2013,7 +2007,7 @@ void Space::stepH() {
     }
  
     // optionally print field states
-    if (verbose == 2) {
+    if (verbose >= 2) {
         const char* probeName = "9E_mobile";
         Probe* probe = Probe::find(probeName);
         if (probe) {
