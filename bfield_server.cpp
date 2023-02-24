@@ -755,7 +755,7 @@ Source* Source::sources;
 Source::Source(const char* name, double3 Bs, double3 Be, char excite,
                const char* func, double (*customFunc)(Source* src, double t),
                int axis, double scale, double tstart, double trise,
-               double duration, double tfall) {
+               double duration, double tfall, int verbose) {
     strncpy(this->name, name, maxName);
     Bsg = Bs * unit;
     Beg = Be * unit;
@@ -771,6 +771,7 @@ Source::Source(const char* name, double3 Bs, double3 Be, char excite,
     this->trise =    trise;
     this->duration = duration;
     this->tfall =    tfall;
+    this->verbose =  verbose;
     sigma = pi;
 
     next = sources;
@@ -778,7 +779,7 @@ Source::Source(const char* name, double3 Bs, double3 Be, char excite,
 }
 
 Source::Source(char** args, int argc) {
-    if (argc != 18)
+    if (argc != 19)
         throw new Err("Source: wrong number of args");
     strncpy(name, args[1], maxName);
     excite =   args[2][0];
@@ -797,7 +798,8 @@ Source::Source(char** args, int argc) {
     trise =    atof(args[15]);
     duration = atof(args[16]);
     tfall =    atof(args[17]);
-    sigma = pi;
+    verbose =  atoi(args[18]);
+   sigma = pi;
     next = sources;
     sources = this;
 }
@@ -880,11 +882,17 @@ void Source::inject() {
                             switch (axis) {
                                 case 0:
                                     sp->E.x[idx] = val;
+                                    sp->E.y[idx] = 0.;
+                                    sp->E.z[idx] = 0.;
                                     break;
                                 case 1:
+                                    sp->E.x[idx] = 0.;
                                     sp->E.y[idx] = val;
+                                    sp->E.z[idx] = 0.;
                                     break;
                                 default:
+                                    sp->E.x[idx] = 0.;
+                                    sp->E.y[idx] = 0.;
                                     sp->E.z[idx] = val;
                                     break;
                             }
@@ -941,10 +949,23 @@ void Source::inject() {
                         } break;
 
                     case 'H': {
+                        sp->cellType[idx] = HARD_E_SOURCE;
                         switch (axis) {
-                            case 0:  sp->H.x[idx] += val; break;
-                            case 1:  sp->H.y[idx] += val; break;
-                            default: sp->H.z[idx] += val; break;
+                            case 0:
+                                sp->H.x[idx] = val;
+                                sp->H.y[idx] = 0.;
+                                sp->H.z[idx] = 0.;
+                                break;
+                            case 1:
+                                sp->H.x[idx] = 0.;
+                                sp->H.y[idx] = val;
+                                sp->H.z[idx] = 0.;
+                                break;
+                            default:
+                                sp->H.x[idx] = 0.;
+                                sp->H.y[idx] = 0.;
+                                sp->H.z[idx] = val;
+                                break;
                         }
                     } break;
                 }
@@ -973,9 +994,9 @@ void Source::postInjectAll() {
 SoftSource::SoftSource(const char* name, double3 Bs, double3 Be, char excite,
                        const char* func, double (*customFunc)(Source* src, double t),
                        int axis, double scale, double tstart, double trise,
-                       double duration, double tfall, double R) :
+                       double duration, double tfall, int verbose, double R) :
             Source(name, Bs, Be, excite, func, customFunc, axis, scale, tstart,
-                   trise, duration, tfall) {
+                   trise, duration, tfall, verbose) {
     isHard = false;
     this->R = R;
     double dist = (Be[axis] - Bs[axis]) * 0.001; // mm to m
@@ -985,9 +1006,9 @@ SoftSource::SoftSource(const char* name, double3 Bs, double3 Be, char excite,
 HardSource::HardSource(const char* name, double3 Bs, double3 Be, char excite,
                        const char* func, double (*customFunc)(Source* src, double t),
                        int axis, double scale, double tstart, double trise,
-                       double duration, double tfall) :
+                       double duration, double tfall, int verbose) :
             Source(name, Bs, Be, excite, func, customFunc, axis, scale, tstart,
-                   trise, duration, tfall) {
+                   trise, duration, tfall, verbose) {
     isHard = true;
 }
 
