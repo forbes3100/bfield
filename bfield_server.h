@@ -24,7 +24,9 @@
 
 // --- Test Modes ---
 
+// LC's Gaussian Pulse runs 1 step late
 #define GAUSSIAN_MATCH_LC
+
 //#define GAUSSIAN_MATCH_LC_BY_FITTING
 //#define H_BEFORE_E_NEG_Y
 #define H_BEFORE_E
@@ -355,7 +357,7 @@ struct Source: Block {
     Source(const char* name, double3 Bs, double3 Be, char excite,
            const char* func, double (*customFunc)(Source* src, double t),
            int axis, double scale, double tstart, double trise,
-           double duration, double tfall);
+           double duration, double tfall, int verbose);
     Source(char** args, int argc);
     void setFunc(const char* s) { strncpy(func, s, maxName); }
     static void deleteAll();
@@ -371,14 +373,14 @@ struct SoftSource: Source {
     SoftSource(const char* name, double3 Bs, double3 Be, char excite,
                const char* func, double (*customFunc)(Source* src, double t),
                int axis, double scale, double tstart, double trise,
-               double duration, double tfall, double R);
+               double duration, double tfall, int verbose, double R);
 };
 
 struct HardSource: Source {
     HardSource(const char* name, double3 Bs, double3 Be, char excite,
                const char* func, double (*customFunc)(Source* src, double t),
                int axis, double scale, double tstart, double trise,
-               double duration, double tfall);
+               double duration, double tfall, int verbose);
 };
 
 // ============================================================================
