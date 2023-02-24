@@ -1089,11 +1089,11 @@ class Source(Block):
             # convert voltage across source to E field strength
             ex = 'E'
             scale /= dist
-        if ex == 'E':
             if ob.s_hard:
                 # want E field to point away from + end of source
                 scale *= -1
-            else:
+        if ex == 'E':
+            if not ob.s_hard:
                 # soft-source value is V_thevenin in place of E
                 scale *= self.sim.dx
                 if ob.verbose >= 2:
@@ -1104,7 +1104,8 @@ class Source(Block):
             f"{Bs.z:g} {Be.z:g} {ob.s_function.replace(' ', '_')} "
             f"{ob.s_hard:d} {ob.s_resistance:g} {axis} {scale:g} "
             f"{tu(ob,'s_tstart'):g} {tu(ob,'s_trise'):g} "
-            f"{tu(ob,'s_duration'):g} {tu(ob,'s_tfall'):g}"
+            f"{tu(ob,'s_duration'):g} {tu(ob,'s_tfall'):g} "
+            f"{ob.verbose}"
         )
         if ob.verbose >= 2:
             print(cmd)
