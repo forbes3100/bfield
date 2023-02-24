@@ -29,6 +29,7 @@
 		D25D4F5F20411220003DC903 /* bfield_server.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bfield_server.cpp; sourceTree = "<group>"; };
 		D279B37D209822360053ABB2 /* bfield_server.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bfield_server.h; sourceTree = "<group>"; };
 		D296DE69204E2ED500E63A55 /* bfield.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = bfield.py; sourceTree = "<group>"; };
+		D29BABC829A7FCD3006EC70B /* lc_arrows.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = lc_arrows.py; sourceTree = "<group>"; };
 		D2A17E08207133F300E35F7D /* bfield_server_eqns.odt */ = {isa = PBXFileReference; lastKnownFileType = file; path = bfield_server_eqns.odt; sourceTree = "<group>"; };
 		D2A17E0C2073751D00E35F7D /* bfield_main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bfield_main.cpp; sourceTree = "<group>"; };
 		D2AEED4E29A064FE007F5181 /* bfield_export.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = bfield_export.py; sourceTree = "<group>"; };
@@ -53,6 +54,7 @@
 				D279B37D209822360053ABB2 /* bfield_server.h */,
 				D2A17E0C2073751D00E35F7D /* bfield_main.cpp */,
 				D296DE69204E2ED500E63A55 /* bfield.py */,
+				D29BABC829A7FCD3006EC70B /* lc_arrows.py */,
 				D2AEED4E29A064FE007F5181 /* bfield_export.py */,
 				D2211A1629849EE600BB8565 /* siunits.py */,
 				D2A17E08207133F300E35F7D /* bfield_server_eqns.odt */,
