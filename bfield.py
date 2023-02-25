@@ -56,6 +56,8 @@ c0 = 2.998e8  # m/s speed of light
 z0 = 376.73  # ohms free space impedance
 e0 = 8.854e-12  # F/m free space permittivity
 mm = 0.001  # m/mm
+arrow_scale = 0.25  # mm per decade for log mode
+arrow_base = 6  # decades adj, log mode
 
 time_units = {
     'sec': 1.0,
@@ -1656,7 +1658,7 @@ class Probe(Block):
                         raise RuntimeError(
                             f"failed to create Tmp collection for {ob.name}"
                         )
-                print(f"probe.vol {ob.name}: {tmpc=}")
+                ##print(f"probe.vol {ob.name}: {tmpc=}")
 
                 r = dx * 0.05
                 h = dx * 0.5
@@ -1771,6 +1773,8 @@ class Probe(Block):
                         Be.z = Bs.z = (Be.z + Bs.z) / 2.0
                         n = N.i * N.j
                     self.n = n
+        elif ob.p_shape == 'Volume':
+            disp_scale = 1.0
 
         cmd = (
             f"{'PU'[update]} {ob.name} {Bs.x:g} {Be.x:g} {Bs.y:g} {Be.y:g} "
@@ -1971,22 +1975,18 @@ class Probe(Block):
             for i, arrow in enumerate(self.arrows):
                 arrow.rotation_euler.zero()
                 pr = False
-                ##pr = arrow.name in ('H040605', 'E040605')
+                ##pr = arrow.name in ('H002002002', 'E002002002')
                 x, y, z = data[i]
                 r2 = x * x + y * y + z * z
                 r2 *= mag_scale**2
                 ##arrow.show_name = r2 > 0
                 if pr:
                     di = data[i]
-                    print(
-                        f"{step}: xyz=({di[0]:g},{di[1]:g},{di[2]:g})"
-                        f"=({x:6.4}, {y:6.4}, {z:6.4}) r2={r2:6.4}"
-                    )
+                    print(f"{step}: xyz={gv(di)} r2={r2:6.4}")
                 if r2 > 1e-12:
                     r = ma.sqrt(r2)
                     if log_mag:
-                        ##r = 0.3*(ma.log(r)+4.7)
-                        r = 0.25 * (ma.log10(r) + 6)
+                        r = arrow_scale * (ma.log10(r) + arrow_base)
                     else:
                         if r > 30:
                             r = 30
@@ -1995,7 +1995,7 @@ class Probe(Block):
                     if pr:
                         print(
                             f"{step}: {arrow.name} "
-                            f"xyz=({x:6.4}, {y:6.4}, {z:6.4}) "
+                            f"xyz={gv((x,y,z))} "
                             f"r={r:6.4} {mag_scale}"
                         )
                     M = Matrix(((x, 0, 0), (y, 0, 0), (z, 0, 0)))
@@ -2754,7 +2754,11 @@ class FieldOperator(bpy.types.Operator):
                     return {'PASS_THROUGH'}
 
                 elif event.type in 'XYZ':
-                    if ob.block_type == 'PROBE' and ob.p_shape == 'Point':
+                    if (
+                        ob
+                        and ob.block_type == 'PROBE'
+                        and ob.p_shape == 'Point'
+                    ):
                         self.lock_axis = ord(event.type) - ord('X')
                         # return {'RUNNING_MODAL'}
                     return {'PASS_THROUGH'}
@@ -2994,17 +2998,21 @@ class FieldObjectPanel(bpy.types.Panel):
         if bt:
             block_classes[bt].draw_props(ob, layout, scene)
         else:
+            # deduce field from arrow (volume probe) objects
+            # from their rotation and scale
             if ob.material_slots:
                 mat = ob.material_slots[0]
-                if mat.name in ('FieldH', 'FieldE'):
+                if mat.name[:-1] in ('Field', 'LC_'):
                     field = mat.name[-1]
                     units = Probe.field_units[('E', 'M')[field == 'H']]
                     Mr = ob.rotation_euler.to_matrix()
                     V = Mr @ Vector((1, 0, 0))
                     ap = ob.parent
+                    if ap is None:
+                        ap = ob
                     r = ob.scale.x / ap.p_sfactor
                     if ap.p_log:
-                        r = 10 ** (r * 4 - 6)
+                        r = 10 ** (r / arrow_scale - arrow_base)
                     r /= ap.p_mag_scale
                     V.x *= r
                     V.y *= r
@@ -3083,15 +3091,17 @@ class FieldMatPanel(bpy.types.Panel):
                 layout.prop(mat, 'mur', text="Relative Permeability µr")
                 layout.prop(mat, 'epr', text="Relative Permittivity εr")
                 layout.prop(mat, 'sige', text="Conductivity σE")
-            if mat.name in ('FieldH', 'FieldE'):
+            if mat.name[:-1] in ('Field', 'LC_'):
                 field = mat.name[-1]
                 units = Probe.field_units[('E', 'M')[field == 'H']]
                 Mr = ob.rotation_euler.to_matrix()
                 V = Mr @ Vector((1, 0, 0))
                 r = ob.scale.x
                 ap = ob.parent
+                if ap is None:
+                    ap = ob
                 if ap.p_log:
-                    r = 10 ** (r * 4 - 6)
+                    r = 10 ** (r / arrow_scale - arrow_base)
                 r /= ap.p_mag_scale
                 V.x *= r
                 V.y *= r
