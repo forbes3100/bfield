@@ -357,7 +357,7 @@ struct Source: Block {
     Source(const char* name, double3 Bs, double3 Be, char excite,
            const char* func, double (*customFunc)(Source* src, double t),
            int axis, double scale, double tstart, double trise,
-           double duration, double tfall, int verbose);
+           double duration, double tfall, double sigma, int verbose);
     Source(char** args, int argc);
     void setFunc(const char* s) { strncpy(func, s, maxName); }
     static void deleteAll();
@@ -373,14 +373,15 @@ struct SoftSource: Source {
     SoftSource(const char* name, double3 Bs, double3 Be, char excite,
                const char* func, double (*customFunc)(Source* src, double t),
                int axis, double scale, double tstart, double trise,
-               double duration, double tfall, int verbose, double R);
+               double duration, double tfall, double sigma, int verbose,
+               double R);
 };
 
 struct HardSource: Source {
     HardSource(const char* name, double3 Bs, double3 Be, char excite,
                const char* func, double (*customFunc)(Source* src, double t),
                int axis, double scale, double tstart, double trise,
-               double duration, double tfall, int verbose);
+               double duration, double tfall, double sigma, int verbose);
 };
 
 // ============================================================================
