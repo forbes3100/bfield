@@ -20,7 +20,7 @@
 
 import bpy
 from mathutils import Vector, Matrix
-from bfield import IVector, StandardCollection
+from bfield import IVector, StandardCollection, z0, arrow_base, arrow_scale
 import numpy as np
 import re
 import math as ma
@@ -35,7 +35,6 @@ if 1:
     nsteps = 3  # number of time steps to run
     zo0 = 1  # Z start cell
     nzo = 3  # Z number of cells
-    sfactor = 1
 elif 0:
     test_name = "zcoax"
     N = IVector(12, 12, 12)  # grid dimensions, in cells
@@ -43,16 +42,16 @@ elif 0:
     nsteps = 5  # number of time steps to run
     zo0 = 4  # Z start cell
     nzo = 5  # Z number of cells
-    sfactor = 1
 
 
 arrowPat = r"LC_[EH]([0-9][0-9][0-9])([0-9][0-9][0-9])([0-9][0-9][0-9])"
+arrow_min = 10 ** (-2 * arrow_base)  # so scale doesn't go negative
 
 
 def read_lc_data(field, step):
     """read LC probe-out files which are in k,j,i order, no PML"""
     tdir = f"{bfield_dir}/lc_output/{test_name}/"
-    data = np.empty((3, N.k, N.j, N.i))
+    data = np.zeros((3, N.k, N.j, N.i))
 
     for axis in range(3):
         for k in range(zo0, zo0 + nzo):
@@ -64,7 +63,7 @@ def read_lc_data(field, step):
     return data
 
 
-def create_lc_arrows(field, log_mag, mag_scale):
+def create_lc_arrows(field):
     """Create a field of E or H arrows from LC output files"""
 
     print(f"Creating LC arrows for {field}")
@@ -91,6 +90,7 @@ def create_lc_arrows(field, log_mag, mag_scale):
             bf_arrows.append(ob)
     if len(bf_arrows) == 0:
         raise RuntimeError(f"{field} arrow objects not found")
+    probe = bf_arrows[0].parent
 
     # find the Tmp collection, used to delete all arrows
     tmpc = bpy.data.collections.get('Tmp')
@@ -116,6 +116,11 @@ def create_lc_arrows(field, log_mag, mag_scale):
         arrow.material_slots[0].material = mat
         arrows.append(arrow)
 
+        # these used by FieldObjectPanel.draw()
+        arrow.p_sfactor = probe.p_sfactor
+        arrow.p_log = probe.p_log
+        arrow.p_mag_scale = probe.p_mag_scale
+
     # animate size and direction of LC arrows
     for step in range(nsteps):
         scn.frame_set(step)
@@ -127,19 +132,21 @@ def create_lc_arrows(field, log_mag, mag_scale):
             arrow.rotation_euler.zero()
             x, y, z = data[:, k, j, i]
             r2 = x * x + y * y + z * z
-            ##if arrow.name.startswith('LC_E001006006'):
-            ##    print(f"{step}: [{i},{j},{k}] {x} {y} {z}, {r2=}")
-            r2 *= mag_scale**2
-            if r2 > 1e-12:
+            if field == 'H':
+                r2 *= z0 * z0
+            name = arrow.name
+            ##if name.startswith('LC_E001006006'):
+            ##    print(f"{step}: {name} [{i},{j},{k}] "
+            ##          f"{x} {y} {z}, {r2=}")
+            r2 *= arrow.p_mag_scale**2
+            if r2 > arrow_min:
                 r = ma.sqrt(r2)
-                if log_mag:
-                    r = 0.25 * (ma.log10(r) + 6)
+                if arrow.p_log:
+                    r = arrow_scale * (ma.log10(r) + arrow_base)
                 else:
                     if r > 30:
                         r = 30
-                r *= sfactor
-                ##if arrow.name.startswith('LC_E002002002'):
-                ##    print(f"   {r=}")
+                r *= arrow.p_sfactor
                 arrow.scale = (r, r, r)
                 M = Matrix(((x, 0, 0), (y, 0, 0), (z, 0, 0)))
                 # rely on rotate() to normalize matrix
@@ -150,5 +157,5 @@ def create_lc_arrows(field, log_mag, mag_scale):
             arrow.keyframe_insert(data_path='scale')
 
 
-create_lc_arrows('E', True, 1.0)
-create_lc_arrows('H', True, 1.0)
+create_lc_arrows('E')
+create_lc_arrows('H')
