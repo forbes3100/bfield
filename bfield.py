@@ -1218,14 +1218,14 @@ class Probe(Block):
         'Voltage': 'E',
         'Current Density': 'J',
         'mE2': 'M',
-        'mH2': 'N',
+        # 'mH2': 'N',
     }
     field_names_mag = {
         'Electric': 'E',
         'Magnetic': 'H',
         'Voltage': 'E',
         'mE2': 'M',
-        'mH2': 'N',
+        # 'mH2': 'N',
         'SigE': 'S',
         'Current Density': 'J',
     }
@@ -1525,6 +1525,11 @@ class Probe(Block):
                     mat = None
 
             if mat is None:
+                # insure any old materials of its are removed
+                for m in bpy.data.materials:
+                    if m.name.startswith(name):
+                        bpy.data.materials.remove(m)
+
                 # create a new material with an image texture
                 if ob.p_verbose >= 2:
                     print(f"Probe: creating {nix}x{niy} image plane")
@@ -2193,7 +2198,6 @@ class Sim:
 
     def __init__(self, context):
         global sims
-        sims[context.scene] = self
         self.context = context
         bpy.app.driver_namespace['fields'] = sims
 
@@ -2203,7 +2207,10 @@ class Sim:
             if ob.name.startswith("0Fields")
         ]
         if len(obs) != 1:
-            raise KeyError("expected to find one '0Fields' object")
+            raise KeyError(
+                "expected to find one '0Fields' object,"
+                f" found {[ob.name for ob in obs]}"
+            )
         preob = obs[0]
         self.state = INITIALIZING
         self.dx = preob.dx
@@ -2222,6 +2229,7 @@ class Sim:
         bpy.app.handlers.frame_change_post.clear()
         self.on_screen_init(context)
         self.gen = self.step_whole_fdtd_gen()
+        sims[context.scene] = self
 
     def start_fdtd(self):
         """Open a connection to the server, as self.s"""
