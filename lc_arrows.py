@@ -27,22 +27,19 @@ import math as ma
 
 bfield_dir = "/Users/scott/github/bfield"
 
-# test parameters
-if 1:
-    test_name = "small"
-    N = IVector(8, 4, 4)  # grid dimensions, in cells
-    dx = 0.001  # cell spacing, m
-    nsteps = 3  # number of time steps to run
-    zo0 = 1  # Z start cell
-    nzo = 3  # Z number of cells
-elif 0:
-    test_name = "zcoax"
-    N = IVector(12, 12, 12)  # grid dimensions, in cells
-    dx = 0.001  # cell spacing, m
-    nsteps = 5  # number of time steps to run
-    zo0 = 4  # Z start cell
-    nzo = 5  # Z number of cells
+test_parameters = {
+    # name:          Ni  Nj  Nk nsteps zo0 nzo
+    "small": (8, 4, 4, 3, 1, 3),
+    "conductor": (12, 12, 12, 5, 4, 5),
+    "zcoax": (12, 12, 12, 5, 4, 5),
+}
 
+scn = bpy.context.scene
+parms = test_parameters.get(scn.name)
+if parms is None:
+    raise RuntimeError(f"unknown scene '{scn.name}'")
+i, j, k, nsteps, zo0, nzo = parms
+N = IVector(i, j, k)
 
 arrowPat = r"LC_[EH]([0-9][0-9][0-9])([0-9][0-9][0-9])([0-9][0-9][0-9])"
 arrow_min = 10 ** (-2 * arrow_base)  # so scale doesn't go negative
@@ -50,7 +47,7 @@ arrow_min = 10 ** (-2 * arrow_base)  # so scale doesn't go negative
 
 def read_lc_data(field, step):
     """read LC probe-out files which are in k,j,i order, no PML"""
-    tdir = f"{bfield_dir}/lc_output/{test_name}/"
+    tdir = f"{bfield_dir}/lc_output/{scn.name}/"
     data = np.zeros((3, N.k, N.j, N.i))
 
     for axis in range(3):
@@ -67,7 +64,6 @@ def create_lc_arrows(field):
     """Create a field of E or H arrows from LC output files"""
 
     print(f"Creating LC arrows for {field}")
-    scn = bpy.context.scene
     objs = bpy.data.objects
     bmats = bpy.data.materials
 
@@ -106,7 +102,7 @@ def create_lc_arrows(field):
     for bfa in bf_arrows:
         name = f"LC_{bfa.name}"
         arrow = bpy.data.objects.new(name, mesh)
-        arrow.location = bfa.location
+        arrow.location = probe.location + bfa.location
         ##arrow.parent = ob
         coll.objects.link(arrow)
         tmpc.objects.link(arrow)
