@@ -322,7 +322,7 @@ bool checkLC() {
     dbl3& E = osp->E;
 
     if (osp->zo0 < 1)
-        throw new Err("%s: zo0 must be > 0", testName);
+        throw new Err("%s: zo0 must be > 0 (edge problem)", testName);
     if (osp->zo0 + osp->nzo > N.k - 1)
         throw new Err("%s: zo0+nzo must be < %d (max z - 1)", testName, N.k-1);
 
@@ -635,7 +635,7 @@ void testMedium() {
     osp = new OuterSpace("0Fields", air,
                                   double3(0., 0., 0.), double3(16., 8., 8.));
     osp->dx = 0.001;
-    nsteps = 3;
+    nsteps = 5;
     osp->zo0 = 1;
     osp->nzo = 6;
     osp->ncb = 5;
@@ -674,7 +674,7 @@ void testDielectric() {
     osp->zo0 = 2;
     osp->nzo = 5;
     osp->ncb = 5;
-    nsteps = 3;
+    nsteps = 5;
     osp->verbose = 3;
 
     new MatBlock("3dielectric", "C", teflon,
@@ -714,12 +714,12 @@ void testConductor() {
 
     //loc = double3(9., 6., 5.5);           // wire
     //hsize = double3(6., 2., 1.) * 0.5;
-    loc = double3(5., 0., 0.);              // wall
-    size = double3(7., 12., 12.);
+    //loc = double3(5., 0., 0.);              // wall
+    //size = double3(7., 12., 12.);
     //loc = double3(5., 7., 0.);             // y-edge
     //size = double3(7., 7., 12.);
-    //loc = double3(8.5, 4.5, 6.);             // y-edge-2
-    //hsize = double3(7., 5., 12.) * 0.5;
+    loc = double3(5., 0., 0.);             // y-edge-2
+    size = double3(7., 8., 12.);
     new MatBlock("5Conductor", "C", copper, loc, loc+size);
 
     new HardSource("8Src", double3(4., 6., 5.), double3(4., 6., 6.), 'E',
@@ -1004,12 +1004,13 @@ int main(int argc, const char* argv[]) {
         //errThresh = 1e-2;
         //errMin = 0.001;
         showAll = true;
-        testSmall();      // 0 miss, 2s, hard
+        //testSmall();      // 2 miss, 2s, hard
+        //                  (mismatches in z=0, outside testable range)
         //testMedium();     // 0 miss, 3s, hard
         //testDielectric(); // 0 miss, 3s, hard
         //testConductor();  // 0 miss, 3s, hard (wall config only)
         // TO BE CHECKED AGAIN:
-        //testZCoax();      // 30+ miss, 43.3% err, 2s, soft x0.7654
+        testZCoax();      // 30+ miss, 43.3% err, 2s, soft x0.7654
         // TO BE CHECKED:
         //testTrace1sm();   // 48+ miss, 66.7% err, 1s, soft x0.335
         //testAlpha();      // --
