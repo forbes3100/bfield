@@ -729,10 +729,13 @@ class LayerMatBlock(Block):
         img_file_path = bpy.path.abspath(img.filepath)
         Bs, Be = self.Bs, self.Be
         fmat_name = ob.get('fmat_name')
-        self.sim.send(
+        cmd = (
             f"LI {ob.name} {fmat_name} {Bs.x:g} {Be.x:g} "
             f"{Bs.y:g} {Be.y:g} {Bs.z:g} {Be.z:g} {img_file_path}"
         )
+        if sim.verbose >= 2:
+            print(cmd)
+        self.sim.send(cmd)
         yield
 
 
@@ -1507,6 +1510,7 @@ class Probe(Block):
                     tex = mat.node_tree.nodes.get('Image Texture')
                     if tex:
                         img = tex.image
+                        tex.extension = 'CLIP'
                         if (
                             img is None
                             or img.generated_width != rep * nix
@@ -1546,12 +1550,7 @@ class Probe(Block):
 
                 tex = mat.node_tree.nodes.new(type='ShaderNodeTexImage')
                 tex.image = img
-                # mtex.texture_coords = 'UV'
-                # mtex.use_map_color_diffuse = True
-                # mtex.mapping = 'FLAT'
-                # if len(mesh.uv_layers) == 0:
-                #     bpy.ops.mesh.uv_texture_add()
-
+                tex.extension = 'CLIP'
                 tex.location = (0, 0)
                 # link the texture node to the material
                 mat.node_tree.links.new(
