@@ -96,8 +96,8 @@ void doCommand(int fd, char* text) {
                 unit = strcmp(val, "mm") == 0 ? 0.001 : 1.;
             else if (strcmp(name, "us_poll") == 0)
                 usPoll = atoi(val);
-            else if (strcmp(name, "verbose") == 0)
-                osp->verbose = atoi(val);
+            //else if (strcmp(name, "verbose") == 0)
+            //    verbose = atoi(val);
             _ = write(fd, "A", 1);
             } break;
 
